@@ -75,49 +75,116 @@ int main(int argc, char const *argv[])
 	// ,100000000,1000000000};
 	vector <long int> numPointsArr{1000000,50000000,100000000};
 	vector<float> queryPercentArr{0.2,0.5};
-	cout << "Bucket Sizes:" << "\t";
-	for(i = 0; i < numBucketsArr.size(); i++)
-	{
-		cout << numBucketsArr[i] << "\t";
-	}
-	cout << "\nNumber of points:" << "\t";
-	for(i = 0; i < numPointsArr.size(); i++)
-	{
-		cout << numPointsArr[i] << "\t";
-	}
-	cout << "\nQuery percent:" << "\t";
-	for(i = 0; i < queryPercentArr.size(); i++)
-	{
-		cout << queryPercentArr[i] << "\t";
-	}
-	cout << "\n";
+	// cout << "Bucket Sizes:" << "\t";
+	// for(i = 0; i < numBucketsArr.size(); i++)
+	// {
+	// 	cout << numBucketsArr[i] << "\t";
+	// }
+	// cout << "\nNumber of points:" << "\t";
+	// for(i = 0; i < numPointsArr.size(); i++)
+	// {
+	// 	cout << numPointsArr[i] << "\t";
+	// }
+	// cout << "\nQuery percent:" << "\t";
+	// for(i = 0; i < queryPercentArr.size(); i++)
+	// {
+	// 	cout << queryPercentArr[i] << "\t";
+	// }
+	// cout << "\n";
 	// vector<Result*> resultArr = do_statistical_analysis(numBucketsArr,numPointsArr,queryPercentArr);
 	
 	// testing correctness
 	int num_Queries = 20;
 	UnionFind* uf = init_unionfind(24,4);
-	for(long int l = 0; l < num_Queries; l++)
+	for(int i = 0; i < 4; i++)
 	{
-		unsigned int x = distr(generator)%(uf->num_elems);
-		unsigned int y = distr(generator)%(uf->num_elems);
-		while(y == x)
+		printf("bucket:%d\n",i);
+		map<long int,long int>::iterator map_itr;
+		for(map_itr = uf->array[i].begin(); map_itr != uf->array[i].end(); map_itr++)
 		{
-			y = distr(generator)%(uf->num_elems);
+			printf("element:%ld parent:%ld\n", map_itr->first, map_itr->second);
 		}
-		int process_of_x = uf->global_arr[x].process_num;
-		int process_of_y = uf->global_arr[y].process_num;
-		printf("union of:%d(%d) %d(%d)",x,process_of_x,y,process_of_y);
-		long int* num_messages = (long int*)malloc(sizeof(long int));
-		long int* final_parent = (long int*)malloc(sizeof(long int));
-		*num_messages = 0;
-		unifyPathCompression((long int)x,(long int)y,uf,process_of_x,process_of_y,num_messages,final_parent);
-		// if(*num_messages > 0)
-		// {
-		// 	res->multipleMsgs++;
-		// }
-		// cout << "  sameSet:" << sameSet << "  num_messages:" << *num_messages << "\n";
-		printf("num_messages:%ld\n",*num_messages);
-		// res->numMessages += *num_messages;
+		printf("\n");
+	}
+	printf("\n");
+	printf("queries starting:\n");
+	printf("\n");
+		
+	unsigned int x;
+	unsigned int y;
+	long int* num_messages = (long int*)malloc(sizeof(long int));
+	long int* final_parent = (long int*)malloc(sizeof(long int));
+
+	x = 15;
+	y = 20;
+	int process_of_x = uf->global_arr[x].process_num;
+	int process_of_y = uf->global_arr[y].process_num;
+	*num_messages = 0;
+	*final_parent = -1;
+	unifyPathCompression((long int)x,(long int)y,uf,process_of_x,process_of_y,num_messages,final_parent);
+	for(int i = 0; i < 4; i++)
+	{
+		printf("bucket:%d\n",i);
+		map<long int,long int>::iterator map_itr;
+		for(map_itr = uf->array[i].begin(); map_itr != uf->array[i].end(); map_itr++)
+		{
+			printf("element:%ld parent:%ld\n", map_itr->first, map_itr->second);
+		}
+		printf("\n");
+	}
+
+	x = 15;
+	y = 14;
+	process_of_x = uf->global_arr[x].process_num;
+	process_of_y = uf->global_arr[y].process_num;
+	*num_messages = 0;
+	*final_parent = -1;
+	unifyPathCompression((long int)x,(long int)y,uf,process_of_x,process_of_y,num_messages,final_parent);
+	for(int i = 0; i < 4; i++)
+	{
+		printf("bucket:%d\n",i);
+		map<long int,long int>::iterator map_itr;
+		for(map_itr = uf->array[i].begin(); map_itr != uf->array[i].end(); map_itr++)
+		{
+			printf("element:%ld parent:%ld\n", map_itr->first, map_itr->second);
+		}
+		printf("\n");
+	}
+
+	x = 8;
+	y = 14;
+	process_of_x = uf->global_arr[x].process_num;
+	process_of_y = uf->global_arr[y].process_num;
+	*num_messages = 0;
+	*final_parent = -1;
+	unifyPathCompression((long int)x,(long int)y,uf,process_of_x,process_of_y,num_messages,final_parent);
+	for(int i = 0; i < 4; i++)
+	{
+		printf("bucket:%d\n",i);
+		map<long int,long int>::iterator map_itr;
+		for(map_itr = uf->array[i].begin(); map_itr != uf->array[i].end(); map_itr++)
+		{
+			printf("element:%ld parent:%ld\n", map_itr->first, map_itr->second);
+		}
+		printf("\n");
+	}
+
+	x = 10;
+	y = 15;
+	process_of_x = uf->global_arr[x].process_num;
+	process_of_y = uf->global_arr[y].process_num;
+	*num_messages = 0;
+	*final_parent = -1;
+	unifyPathCompression((long int)x,(long int)y,uf,process_of_x,process_of_y,num_messages,final_parent);
+	for(int i = 0; i < 4; i++)
+	{
+		printf("bucket:%d\n",i);
+		map<long int,long int>::iterator map_itr;
+		for(map_itr = uf->array[i].begin(); map_itr != uf->array[i].end(); map_itr++)
+		{
+			printf("element:%ld parent:%ld\n", map_itr->first, map_itr->second);
+		}
+		printf("\n");
 	}
 	return 0;
 }

@@ -167,18 +167,17 @@ void unifyPathCompression(long int x, long int y, UnionFind* uf, int process_of_
 		if(root_y < x)
 		{
 			uf->array[process_of_y][root_y] = x;
+			printf("set parent of %ld to %ld\n",root_y,x);
 			*final_parent =  x;// path compression
-			return;
 		}
 		else if(root_y == x)
 		{
 			*final_parent = x;
-			return;
 		}
 		else
 		{
 			*num_messages = * num_messages + 1;
-			unifyPartialPathCompression(root_y,x,uf,process_of_y,process_of_x,num_messages,final_parent);
+			unifyPathCompression(root_y,x,uf,process_of_y,process_of_x,num_messages,final_parent);
 		}
 	}
 	else
@@ -186,19 +185,24 @@ void unifyPathCompression(long int x, long int y, UnionFind* uf, int process_of_
 		if(its_parent < x)
 		{
 			*num_messages = *num_messages + 1;
-			unifyPartialPathCompression(x,its_parent,uf,process_of_x,uf->global_arr[its_parent].process_num,num_messages,final_parent);
+			unifyPathCompression(x,its_parent,uf,process_of_x,uf->global_arr[its_parent].process_num,num_messages,final_parent);
 		}
 		else
 		{
 			*num_messages = *num_messages + 1;
-			unifyPartialPathCompression(its_parent,x,uf,uf->global_arr[its_parent].process_num,process_of_x,num_messages,final_parent);
+			unifyPathCompression(its_parent,x,uf,uf->global_arr[its_parent].process_num,process_of_x,num_messages,final_parent);
 		}
 	}
 	long int node = y;
-	while(node < *final_parent && uf->global_arr[node].process_num == process_of_y)
+	while(node < *final_parent && uf->global_arr[node].process_num == process_of_y && *final_parent != -1)
 	{
 		int temp = uf->array[process_of_y][node];
-		uf->array[process_of_y][node] = *final_parent;
+		if(uf->array[process_of_y][node] != *final_parent)
+		{	
+			uf->array[process_of_y][node] = *final_parent;
+			printf("updated parent of %ld to %ld\n",node,*final_parent);
+		}
 		node = temp;		
 	}
 }
+
