@@ -46,3 +46,4 @@ void printUnionFind(UnionFind* uf);
 bool unify(long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages);
 vector<Result*> do_statistical_analysis(vector <int> numBucketsArr,vector <long int> numPointsArr,vector<float> queryPercentArr);
 void unifyPathCompression(long int x, long int y, UnionFind* uf, int process_of_x, int process_of_y, long int* num_messages,long int* final_parent);
+void unifyPartialPathCompression(long int x, long int y, UnionFind* uf, int process_of_x, int process_of_y, long int* num_messages,long int* final_parent);

@@ -96,7 +96,7 @@ int main(int argc, char const *argv[])
 	// testing correctness
 	int num_Queries = 20;
 	UnionFind* uf = init_unionfind(24,4);
-	for(long int l = 0; l < res->numQueries; l++)
+	for(long int l = 0; l < num_Queries; l++)
 	{
 		unsigned int x = distr(generator)%(uf->num_elems);
 		unsigned int y = distr(generator)%(uf->num_elems);
@@ -108,14 +108,16 @@ int main(int argc, char const *argv[])
 		int process_of_y = uf->global_arr[y].process_num;
 		printf("union of:%d(%d) %d(%d)",x,process_of_x,y,process_of_y);
 		long int* num_messages = (long int*)malloc(sizeof(long int));
+		long int* final_parent = (long int*)malloc(sizeof(long int));
 		*num_messages = 0;
-		unify((long int)x,(long int)y,uf,process_of_x,process_of_y,num_messages);
-		if(*num_messages > 0)
-		{
-			res->multipleMsgs++;
-		}
+		unifyPathCompression((long int)x,(long int)y,uf,process_of_x,process_of_y,num_messages,final_parent);
+		// if(*num_messages > 0)
+		// {
+		// 	res->multipleMsgs++;
+		// }
 		// cout << "  sameSet:" << sameSet << "  num_messages:" << *num_messages << "\n";
-		res->numMessages += *num_messages;
+		printf("num_messages:%ld\n",*num_messages);
+		// res->numMessages += *num_messages;
 	}
 	return 0;
 }

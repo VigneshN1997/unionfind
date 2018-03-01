@@ -146,7 +146,7 @@ void unifyPartialPathCompression(long int x, long int y, UnionFind* uf, int proc
 			*num_messages = *num_messages + 1;
 			unifyPartialPathCompression(its_parent,x,uf,uf->global_arr[its_parent].process_num,process_of_x,num_messages,final_parent);
 		}
-		if(its_parent < final_parent)
+		if(its_parent < *final_parent)
 		{	
 			uf->array[process_of_y][its_parent] = *final_parent;
 		}
