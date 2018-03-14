@@ -13,5 +13,5 @@
 using namespace std;
 
 
-vector<long int> createArr(int processRank, long int numPointsPerProcess);
+vector<long int>* createArr(int processRank, long int numPointsPerProcess,vector<long int>* pointIdMapping)
 

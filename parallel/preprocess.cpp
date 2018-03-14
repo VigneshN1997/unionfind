@@ -1,9 +1,8 @@
 #include "header.h"
 
-vector<long int> createArr(int processRank, long int numPointsPerProcess,vector<long int>* pointIdMapping)
+vector<long int>* createArr(int processRank, long int numPointsPerProcess,vector<long int>* pointIdMapping)
 {
-	vector<long int> unionfindDs;
-	unionfindDs.reserve(numPointsPerProcess);
+	vector<long int>* unionfindDs = new vector<long int>(numPointsPerProcess);
 	long int startIndex = processRank*numPointsPerProcess;
 	long int lastIndex = startIndex + numPointsPerProcess - 1;
 	long int i;
@@ -12,7 +11,7 @@ vector<long int> createArr(int processRank, long int numPointsPerProcess,vector<
 		// unionfindDs[a] stores parent of a
 		// so initially unionfindDs[a] = a
 		(*pointIdMapping)[i] = processRank;
-		unionfindDs[i - startIndex] = i;
+		(*unionfindDs)[i - startIndex] = i;
 	}
 	return unionfindDs;
 }

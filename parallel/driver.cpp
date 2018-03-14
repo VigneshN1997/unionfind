@@ -17,9 +17,10 @@ int main(int argc, char const *argv[])
 	vector<long int>* pointIdMapping = new vector<long int>(numPoints);
 	
 	// union find array of process my_rank
+	vector<long int>* unionfindDs = NULL;
 	if(my_rank != 0)
 	{
-		vector<long int> unionfindDs = createArr(my_rank,numPointsPerProcess,pointIdMapping);
+		unionfindDs = createArr(my_rank,numPointsPerProcess,pointIdMapping);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 
@@ -45,7 +46,7 @@ int main(int argc, char const *argv[])
 	}
 	else
 	{
-		MPI_Send(&unionfindDs[0],numPointsPerProcess,MPI_LONG,0,my_rank,MPI_COMM_WORLD);
+		MPI_Send(unionfindDs,numPointsPerProcess,MPI_LONG,0,my_rank,MPI_COMM_WORLD);
 	}
 
 	// create random queries
