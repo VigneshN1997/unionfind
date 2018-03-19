@@ -145,7 +145,7 @@ int main(int argc, char const *argv[])
 	// now all processes have the query array they have to process
 	if(my_rank != 0)
 	{
-		processQueries(my_rank,queriesProcessX,queriesProcessY,unionfindDs,pointIdMappingMain,numPointsPerProcess);
+		processQueries(my_rank,queriesProcessX,queriesProcessY,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes);
 	}
 	MPI_Finalize();
 	return 0;
