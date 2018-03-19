@@ -196,7 +196,7 @@ void unifyPathCompression(long int x, long int y, UnionFind* uf, int process_of_
 	long int node = y;
 	while(node < *final_parent && uf->global_arr[node].process_num == process_of_y && *final_parent != -1)
 	{
-		int temp = uf->array[process_of_y][node];
+		long int temp = uf->array[process_of_y][node];
 		if(uf->array[process_of_y][node] != *final_parent)
 		{	
 			uf->array[process_of_y][node] = *final_parent;

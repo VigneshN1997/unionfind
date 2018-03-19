@@ -31,8 +31,8 @@ typedef struct
 	long int num_elems_per_arr;
 	vector<vector<long int> > array;
 	vector<int> global_arr;
-	vector<map<int, vector<queryParentMapping> > > updatesDone;
-	vector<map<vector<long int>, vector<long int> > > > unionQueriesSent;
+	vector<unordered_map<int, vector<queryParentMapping> > > updatesDone;
+	vector<unordered_map<vector<long int>, vector<long int> > > > unionQueriesSent;
 }UnionFind;
 
 UnionFind* init_unionfind(long int n,int num_arrays);

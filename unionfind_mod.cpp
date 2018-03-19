@@ -39,7 +39,7 @@ void random_initialize(UnionFind* uf,long int n,int num_arrays)
 	}
 	for(i = 0; i < (uf->array).size(); i++)
 	{
-		map<int, vector<queryParentMapping> > m;
+		unordered_map<int, vector<queryParentMapping> > m;
 		m.clear();
 		for(j = 0; j < (uf->array).size(); j++)
 		{
@@ -55,7 +55,7 @@ void random_initialize(UnionFind* uf,long int n,int num_arrays)
 	}
 	for(i = 0; i < (uf->array).size(); i++)
 	{
-		map<vector<long int>, vector<long int> > > mappingOneProcess;
+		unordered_map<vector<long int>, vector<long int> > > mappingOneProcess;
 		mappingOneProcess.clear();
 		(uf->unionQueriesSent).push_back(mappingOneProcess);
 	}
@@ -165,9 +165,30 @@ vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int
 		}
 	}
 
-	if(updatesToDo.size() != 0)
+	if(updatesToDo.size() > 0)
 	{
 		// write this
+		vector<queryParentMapping>::iterator itr;
+		for(itr = updatesToDo.begin(); itr != updatesToDo.end(); itr++)
+		{
+			vector<long int> query = itr->query;
+			long int parent = itr->parent;
+			unordered_map<vector<long int>, vector<long int> > >::const_iterator map_itr = (uf->unionQueriesSent)[process_of_y].find(query);
+			if(map_itr != (uf->unionQueriesSent)[process_of_y].end())
+			{
+				vector<long int> currXYforQuery = map_itr->second();
+				long int node = currXYforQuery[1]; // y
+				while(node < parent && uf->global_arr[node] == process_of_y)
+				{
+					long int temp = uf->array[process_of_y][node - startIndex];
+					if(uf->array[process_of_y][node - startIndex] != parent)
+					{
+						uf->array[process_of_y][node - startIndex] = parent;
+					}
+					node = temp;
+				}
+			}
+		}
 	}
 	if(queryFromProcess == -1) // if query is from root process return nothing
 	{
@@ -175,10 +196,7 @@ vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int
 		nullVec.clear();
 		return nullVec;
 	}
-	else
-	{
-		vector<queryParentMapping> updateVec = (uf->updatesDone)[process_of_y][queryFromProcess]; 
-		(uf->updatesDone)[process_of_y][queryFromProcess].clear(); // check this
-		return updateVec;
-	}
+	vector<queryParentMapping> updateVec = (uf->updatesDone)[process_of_y][queryFromProcess]; 
+	(uf->updatesDone)[process_of_y][queryFromProcess].clear(); // check this
+	return updateVec;
 }	
