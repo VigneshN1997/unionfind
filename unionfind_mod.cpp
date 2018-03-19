@@ -55,18 +55,20 @@ void random_initialize(UnionFind* uf,long int n,int num_arrays)
 	}
 	for(i = 0; i < (uf->array).size(); i++)
 	{
-		map<vector<long int>, bool> > mappingOneProcess;
+		map<vector<long int>, vector<long int> > > mappingOneProcess;
 		mappingOneProcess.clear();
 		(uf->unionQueriesSent).push_back(mappingOneProcess);
 	}
 }
 
-vector<queryParentMapping> unifyOptimized(long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess)
+vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess)
 {
 	long int root_y = y;
 	long int startIndex = process_of_y*uf->num_elems_per_arr;
 	long int its_parent = uf->array[process_of_y][y - startIndex];
 	bool unionDoneInThisProcess = false;
+	vector<queryParentMapping> updatesToDo;
+	updatesToDo.clear();
 	while(root_y < its_parent && uf->global_arr[its_parent] == process_of_y)
 	{
 		root_y = its_parent;
@@ -82,7 +84,13 @@ vector<queryParentMapping> unifyOptimized(long int x, long int y, UnionFind* uf,
 			unionDoneInThisProcess = true;
 			if(queryFromProcess != -1)
 			{
-
+				queryParentMapping q;
+				q.query.clear();
+				q.query.push_back(queryNum);
+				q.query.push_back(x);
+				q.query.push_back(y);
+				q.parent = x;
+				(uf->updatesDone)[process_of_y][queryFromProcess].push_back(query);
 			}
 		}
 		else if(root_y == x)
@@ -90,25 +98,56 @@ vector<queryParentMapping> unifyOptimized(long int x, long int y, UnionFind* uf,
 			unionDoneInThisProcess = true;
 			if(queryFromProcess != -1)
 			{
-				
+				queryParentMapping q;
+				q.query.clear();
+				q.query.push_back(queryNum);
+				q.query.push_back(x);
+				q.query.push_back(y);
+				q.parent = x;
+				(uf->updatesDone)[process_of_y][queryFromProcess].push_back(query);
 			}
 		}
 		else
 		{
 			*num_messages += 1;
-			int queryFromProcess = process_of_y;
-			vector<
+			vector<queryParentMapping> updatesToDo = unifyOptimized(queryNum,root_y,x,uf,process_of_y,process_of_x,num_messages,process_of_y);
 		}
 	}
 	else
 	{
 		if(its_parent < x)
 		{
+			*num_messages += 1;
+			vector<long int> sentQuery;
+			vector<long int> currXY;
+			sentQuery.clear();
+			currXY.clear();
+			sentQuery.push_back(queryNum);
+			sentQuery.push_back(x);
+			sentQuery.push_back(its_parent);
 
+			currXY.push_back(x);
+			currXY.push_back(y);
+
+			(uf->unionQueriesSent)[process_of_y][sentQuery] = currXY;
+			vector<queryParentMapping> updatesToDo = unifyOptimized(queryNum,x,its_parent,uf,process_of_x,uf->global_arr[its_parent],num_messages,process_of_y);
 		}
 		else
 		{
+			*num_messages += 1;
+			vector<long int> sentQuery;
+			vector<long int> currXY;
+			sentQuery.clear();
+			currXY.clear();
+			sentQuery.push_back(queryNum);
+			sentQuery.push_back(its_parent);
+			sentQuery.push_back(x);
 
+			currXY.push_back(x);
+			currXY.push_back(y);
+
+			(uf->unionQueriesSent)[process_of_y][sentQuery] = currXY;
+			vector<queryParentMapping> updatesToDo = unifyOptimized(queryNum,its_parent,x,uf,uf->global_arr[its_parent],process_of_x,num_messages,process_of_y);
 		}
 	}
 	if(unionDoneInThisProcess)
@@ -125,6 +164,11 @@ vector<queryParentMapping> unifyOptimized(long int x, long int y, UnionFind* uf,
 			node = temp;
 		}
 	}
+
+	if(updatesToDo.size() != 0)
+	{
+		// write this
+	}
 	if(queryFromProcess == -1) // if query is from root process return nothing
 	{
 		vector<queryParentMapping> nullVec;
@@ -133,6 +177,8 @@ vector<queryParentMapping> unifyOptimized(long int x, long int y, UnionFind* uf,
 	}
 	else
 	{
-		return (uf->updatesDone)[process_of_y][]
+		vector<queryParentMapping> updateVec = (uf->updatesDone)[process_of_y][queryFromProcess]; 
+		(uf->updatesDone)[process_of_y][queryFromProcess].clear(); // check this
+		return updateVec;
 	}
 }	

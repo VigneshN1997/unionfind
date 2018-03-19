@@ -18,12 +18,13 @@ using namespace std;
 
 typedef struct
 {
-	vector<long int> queryParent; // vector of size 3(First 2 elements contain query, third element contains parent set)
+	vector<long int> query; // vector of size 3(First 2 elements contain query, third element contains parent set)
+	long int parent;
 }queryParentMapping;
 
 
-// queryParentMapping: stores (x,y) -> id of parent set
-// unionQueriesSent: vector of size 4: (x,y -> sent) to  (x,y) -> of the current function
+// queryParentMapping: stores (queryNum,x,y) -> id of parent set
+// unionQueriesSent: vector of size 4: (queryNum,x,y -> sent) to  (x,y) -> of the current function
 typedef struct
 {
 	long int num_elems;
