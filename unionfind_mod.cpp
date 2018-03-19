@@ -1,42 +1,49 @@
+
+// this function will initialize the unionfind data structure
+// by dividing the points among the arrays ( the division of points is not random)
 UnionFind* init_unionfind(long int n,int num_arrays)
 {
 	UnionFind* uf = (UnionFind*)malloc(sizeof(UnionFind));
 	long int num_elems_per_arr = n / num_arrays;
-	// uf->array = new vector<vector<int> >(num_arrays,vector<int>(num_elems_per_arr)); 
-	// uf->global_arr = new vector<id_proc>(n);
 	(uf->array).clear();
+	(uf->global_arr).clear();
 	uf->num_elems = num_elems_per_arr*num_arrays;
 	uf->num_elems_per_arr = num_elems_per_arr;
 	random_initialize(uf,uf->num_elems,num_arrays);
 	return uf;
 }
 
+
+// for initializing the arrays of unionfind ds
 void random_initialize(UnionFind* uf,long int n,int num_arrays)
 {
 	long int i,j,k;
 	for(i = 0; i < n; i++)
 	{
-		id_proc s1;
 		(uf->global_arr).push_back(-1);
 	}
 	// printf("\n");
 	long int lower = 0;
 	long int higher = uf->num_elems_per_arr;
 	int procRank = 0;
+
+	// arrays initialized here
 	while(higher <= uf->num_elems)
 	{
 		vector<long int> procArr;
 		procArr.clear();
-		for(long int k = lower; k < higher; k++)
+		for(k = lower; k < higher; k++)
 		{
 			procArr.push_back(k);
-			(uf->global_arr)[k].process_num = procRank;
+			(uf->global_arr)[k] = procRank;
 		}
 		(uf->array).push_back(procArr);
 		lower = lower + uf->num_elems_per_arr;
 		higher = higher + uf->num_elems_per_arr;
 		procRank++;
 	}
+
+	// initializing the deferred updates data structure
 	for(i = 0; i < (uf->array).size(); i++)
 	{
 		unordered_map<int, vector<queryParentMapping> > m;
@@ -63,12 +70,14 @@ void random_initialize(UnionFind* uf,long int n,int num_arrays)
 
 vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess)
 {
-	long int root_y = y;
-	long int startIndex = process_of_y*uf->num_elems_per_arr;
-	long int its_parent = uf->array[process_of_y][y - startIndex];
-	bool unionDoneInThisProcess = false;
-	vector<queryParentMapping> updatesToDo;
+	long int root_y = y; // root_y will have the local root/ global root
+	long int startIndex = process_of_y*uf->num_elems_per_arr;	// for array index manipulation
+	long int its_parent = uf->array[process_of_y][y - startIndex]; // parent of y
+	bool unionDoneInThisProcess = false;						// if union operation is finished in this process
+	vector<queryParentMapping> updatesToDo;						// vector that will store the deferred updates returned by the process the current process forwards the query to
 	updatesToDo.clear();
+
+	// go up the tree till you get to local / global root
 	while(root_y < its_parent && uf->global_arr[its_parent] == process_of_y)
 	{
 		root_y = its_parent;
@@ -176,7 +185,7 @@ vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int
 			unordered_map<vector<long int>, vector<long int> > >::const_iterator map_itr = (uf->unionQueriesSent)[process_of_y].find(query);
 			if(map_itr != (uf->unionQueriesSent)[process_of_y].end())
 			{
-				vector<long int> currXYforQuery = map_itr->second();
+				vector<long int> currXYforQuery = map_itr->second;
 				long int node = currXYforQuery[1]; // y
 				while(node < parent && uf->global_arr[node] == process_of_y)
 				{
@@ -187,6 +196,8 @@ vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int
 					}
 					node = temp;
 				}
+				// erase
+				(uf->unionQueriesSent)[process_of_y].erase(map_itr);
 			}
 		}
 	}
