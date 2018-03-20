@@ -31,11 +31,13 @@ typedef struct
 	long int num_elems_per_arr;
 	vector<vector<long int> > array;
 	vector<int> global_arr;
-	vector<unordered_map<int, vector<queryParentMapping> > > updatesDone;
-	vector<unordered_map<vector<long int>, vector<long int> > > > unionQueriesSent;
+	vector<map<int, vector<queryParentMapping> > > updatesDone;
+	vector<map<vector<long int>, vector<long int> > > unionQueriesSent;
 }UnionFind;
 
 UnionFind* init_unionfind(long int n,int num_arrays);
 void random_initialize(UnionFind* uf,long int n,int num_arrays);
-void printUnionFind(UnionFind* uf);
-bool unifyOptimized(long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages);
+void addUpdate(long int queryNum,long int x,long int y,int process_of_y,int queryFromProcess,UnionFind* uf);
+void addQuerytoSentQuerySet(long int queryNum,long int new_x,long int new_y,long int curr_x,long int curr_y,int process_of_curr_y,UnionFind* uf);
+vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess);
+void doPathCompression(long int startNode,long int parent,int process_of_y,long int startIndex, UnionFind* uf);

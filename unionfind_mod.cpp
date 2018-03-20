@@ -1,20 +1,18 @@
+#include "unionfind_mod.h"
 
-// this function will initialize the unionfind data structure
-// by dividing the points among the arrays ( the division of points is not random)
 UnionFind* init_unionfind(long int n,int num_arrays)
 {
 	UnionFind* uf = (UnionFind*)malloc(sizeof(UnionFind));
 	long int num_elems_per_arr = n / num_arrays;
+	// uf->array = new vector<vector<int> >(num_arrays,vector<int>(num_elems_per_arr)); 
+	// uf->global_arr = new vector<id_proc>(n);
 	(uf->array).clear();
-	(uf->global_arr).clear();
 	uf->num_elems = num_elems_per_arr*num_arrays;
 	uf->num_elems_per_arr = num_elems_per_arr;
 	random_initialize(uf,uf->num_elems,num_arrays);
 	return uf;
 }
 
-
-// for initializing the arrays of unionfind ds
 void random_initialize(UnionFind* uf,long int n,int num_arrays)
 {
 	long int i,j,k;
@@ -26,13 +24,11 @@ void random_initialize(UnionFind* uf,long int n,int num_arrays)
 	long int lower = 0;
 	long int higher = uf->num_elems_per_arr;
 	int procRank = 0;
-
-	// arrays initialized here
 	while(higher <= uf->num_elems)
 	{
 		vector<long int> procArr;
 		procArr.clear();
-		for(k = lower; k < higher; k++)
+		for(long int k = lower; k < higher; k++)
 		{
 			procArr.push_back(k);
 			(uf->global_arr)[k] = procRank;
@@ -42,11 +38,9 @@ void random_initialize(UnionFind* uf,long int n,int num_arrays)
 		higher = higher + uf->num_elems_per_arr;
 		procRank++;
 	}
-
-	// initializing the deferred updates data structure
 	for(i = 0; i < (uf->array).size(); i++)
 	{
-		unordered_map<int, vector<queryParentMapping> > m;
+		map<int, vector<queryParentMapping> > m;
 		m.clear();
 		for(j = 0; j < (uf->array).size(); j++)
 		{
@@ -62,30 +56,59 @@ void random_initialize(UnionFind* uf,long int n,int num_arrays)
 	}
 	for(i = 0; i < (uf->array).size(); i++)
 	{
-		unordered_map<vector<long int>, vector<long int> > > mappingOneProcess;
-		mappingOneProcess.clear();
+		map<vector<long int>, vector<long int> > mappingOneProcess;
+		// mappingOneProcess.clear();
 		(uf->unionQueriesSent).push_back(mappingOneProcess);
 	}
 }
 
+void addUpdate(long int queryNum,long int x,long int y,int process_of_y,int queryFromProcess,UnionFind* uf)
+{
+	queryParentMapping q;
+	q.query.clear();
+	q.query.push_back(queryNum);
+	q.query.push_back(x);
+	q.query.push_back(y);
+	q.parent = x;
+	(uf->updatesDone)[process_of_y][queryFromProcess].push_back(q);
+}
+
+void addQuerytoSentQuerySet(long int queryNum,long int new_x,long int new_y,long int curr_x,long int curr_y,int process_of_curr_y,UnionFind* uf)
+{
+	vector<long int> sentQuery;
+	vector<long int> currXY;
+	sentQuery.clear();
+	currXY.clear();
+	sentQuery.push_back(queryNum);
+	sentQuery.push_back(new_x);
+	sentQuery.push_back(new_y);
+
+	currXY.push_back(curr_x);
+	currXY.push_back(curr_y);
+
+	(uf->unionQueriesSent)[process_of_curr_y][sentQuery] = currXY;
+}
+
 vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess)
 {
-	long int root_y = y; // root_y will have the local root/ global root
-	long int startIndex = process_of_y*uf->num_elems_per_arr;	// for array index manipulation
-	long int its_parent = uf->array[process_of_y][y - startIndex]; // parent of y
-	bool unionDoneInThisProcess = false;						// if union operation is finished in this process
-	vector<queryParentMapping> updatesToDo;						// vector that will store the deferred updates returned by the process the current process forwards the query to
+	long int root_y = y;
+	long int startIndex = process_of_y*uf->num_elems_per_arr;
+	long int its_parent = uf->array[process_of_y][y - startIndex];
+	bool unionDoneInThisProcess = false;
+	vector<queryParentMapping> updatesToDo;
 	updatesToDo.clear();
 
-	// go up the tree till you get to local / global root
+	// traversing up the tree
 	while(root_y < its_parent && uf->global_arr[its_parent] == process_of_y)
 	{
 		root_y = its_parent;
 		its_parent = uf->array[process_of_y][root_y - startIndex];
 	}
 
+	// if root_y is global root
 	if(root_y == its_parent)
 	{
+		// point root_y to x
 		if(root_y < x)
 		{
 			uf->array[process_of_y][root_y - startIndex] = x;
@@ -93,85 +116,50 @@ vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int
 			unionDoneInThisProcess = true;
 			if(queryFromProcess != -1)
 			{
-				queryParentMapping q;
-				q.query.clear();
-				q.query.push_back(queryNum);
-				q.query.push_back(x);
-				q.query.push_back(y);
-				q.parent = x;
-				(uf->updatesDone)[process_of_y][queryFromProcess].push_back(query);
+				addUpdate(queryNum,x,y,process_of_y,queryFromProcess,uf);
 			}
 		}
+
+		// x and y in same set
 		else if(root_y == x)
 		{
 			unionDoneInThisProcess = true;
 			if(queryFromProcess != -1)
 			{
-				queryParentMapping q;
-				q.query.clear();
-				q.query.push_back(queryNum);
-				q.query.push_back(x);
-				q.query.push_back(y);
-				q.parent = x;
-				(uf->updatesDone)[process_of_y][queryFromProcess].push_back(query);
+				addUpdate(queryNum,x,y,process_of_y,queryFromProcess,uf);
 			}
 		}
+		// root_y > x (then root_y cannot point to x so forward the query)
 		else
 		{
 			*num_messages += 1;
+			printf("query(%ld,%ld)=>(%ld,%ld) forwarded to %d from %d\n",x,y,root_y,x,process_of_x,process_of_y);
 			vector<queryParentMapping> updatesToDo = unifyOptimized(queryNum,root_y,x,uf,process_of_y,process_of_x,num_messages,process_of_y);
 		}
 	}
+	// root_y is a local root
 	else
 	{
+		// if parent of root_y is < x 
 		if(its_parent < x)
 		{
 			*num_messages += 1;
-			vector<long int> sentQuery;
-			vector<long int> currXY;
-			sentQuery.clear();
-			currXY.clear();
-			sentQuery.push_back(queryNum);
-			sentQuery.push_back(x);
-			sentQuery.push_back(its_parent);
-
-			currXY.push_back(x);
-			currXY.push_back(y);
-
-			(uf->unionQueriesSent)[process_of_y][sentQuery] = currXY;
+			addQuerytoSentQuerySet(queryNum,x,its_parent,x,y,process_of_y,uf);
+			printf("query(%ld,%ld)=>(%ld,%ld) forwarded to %d from %d\n",x,y,x,its_parent,uf->global_arr[its_parent],process_of_y);
 			vector<queryParentMapping> updatesToDo = unifyOptimized(queryNum,x,its_parent,uf,process_of_x,uf->global_arr[its_parent],num_messages,process_of_y);
 		}
 		else
 		{
 			*num_messages += 1;
-			vector<long int> sentQuery;
-			vector<long int> currXY;
-			sentQuery.clear();
-			currXY.clear();
-			sentQuery.push_back(queryNum);
-			sentQuery.push_back(its_parent);
-			sentQuery.push_back(x);
-
-			currXY.push_back(x);
-			currXY.push_back(y);
-
-			(uf->unionQueriesSent)[process_of_y][sentQuery] = currXY;
+			addQuerytoSentQuerySet(queryNum,its_parent,x,x,y,process_of_y,uf);
+			printf("query(%ld,%ld)=>(%ld,%ld) forwarded to %d from %d\n",x,y,its_parent,x,process_of_x,process_of_y);
 			vector<queryParentMapping> updatesToDo = unifyOptimized(queryNum,its_parent,x,uf,uf->global_arr[its_parent],process_of_x,num_messages,process_of_y);
 		}
 	}
+	// if union is done in this process then do path compression for this process
 	if(unionDoneInThisProcess)
 	{
-		long int node = y;
-		while(node < x && uf->global_arr[node] == process_of_y)
-		{
-			int temp = uf->array[process_of_y][node - startIndex];
-			if(uf->array[process_of_y][node - startIndex] != x)
-			{
-				uf->array[process_of_y][node - startIndex] = x;
-				printf("updated parent of %ld to %ld\n",node,x);
-			}
-			node = temp;
-		}
+		doPathCompression(y,x,process_of_y,startIndex,uf);
 	}
 
 	if(updatesToDo.size() > 0)
@@ -182,26 +170,15 @@ vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int
 		{
 			vector<long int> query = itr->query;
 			long int parent = itr->parent;
-			unordered_map<vector<long int>, vector<long int> > >::const_iterator map_itr = (uf->unionQueriesSent)[process_of_y].find(query);
+			map<vector<long int>, vector<long int> >::const_iterator map_itr = (uf->unionQueriesSent)[process_of_y].find(query);
 			if(map_itr != (uf->unionQueriesSent)[process_of_y].end())
 			{
 				vector<long int> currXYforQuery = map_itr->second;
-				long int node = currXYforQuery[1]; // y
-				while(node < parent && uf->global_arr[node] == process_of_y)
-				{
-					long int temp = uf->array[process_of_y][node - startIndex];
-					if(uf->array[process_of_y][node - startIndex] != parent)
-					{
-						uf->array[process_of_y][node - startIndex] = parent;
-					}
-					node = temp;
-				}
-				// erase
-				(uf->unionQueriesSent)[process_of_y].erase(map_itr);
+				doPathCompression(currXYforQuery[1],parent,process_of_y,startIndex,uf);
 			}
 		}
 	}
-	if(queryFromProcess == -1) // if query is from root process return nothing
+	if(queryFromProcess == -1) // if query is from driver process return nothing
 	{
 		vector<queryParentMapping> nullVec;
 		nullVec.clear();
@@ -210,4 +187,19 @@ vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int
 	vector<queryParentMapping> updateVec = (uf->updatesDone)[process_of_y][queryFromProcess]; 
 	(uf->updatesDone)[process_of_y][queryFromProcess].clear(); // check this
 	return updateVec;
-}	
+}
+
+void doPathCompression(long int startNode,long int parent,int process_of_y,long int startIndex, UnionFind* uf)
+{
+	long int node = startNode;
+	while(node < parent && uf->global_arr[node] == process_of_y)
+	{
+		long int temp = uf->array[process_of_y][node - startIndex];
+		if(uf->array[process_of_y][node - startIndex] != parent)
+		{
+			uf->array[process_of_y][node - startIndex] = parent;
+			printf("updated parent of %ld to %ld in process %d\n",node,parent,process_of_y);
+		}
+		node = temp;
+	}
+}
