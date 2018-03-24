@@ -12,12 +12,12 @@ void sendMessage(vector<long int> queryForward, int toProcess,map<int,int>* proc
     }
 }
 
-void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map<long int,bool>* replyRequired, int src,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status)
+void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map<long int,bool>* replyRequired,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status)
 {
     returnStruct* retVal;
     if(queryRecv[0] == 1) // means process that sent this message has finished its processing
     {
-        (*finished)[src - 1] = true;
+        (*finished)[status.MPI_SOURCE - 1] = true;
     }
     else if(queryRecv[3] > 0)
     {
@@ -30,14 +30,14 @@ void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map
         retVal = unify(queryRecv[4],queryRecv[5],unionfindDs,pointIdMapping,startIndex,processRank);
         if(retVal->query == NULL)
         {
-            vector<long int> replyMsg = createNewMessage(0,-1,-1,queryRecv[1],-1,-1,-1);
+            vector<long int> replyMsg = createNewMessage(0,-1,-1,queryRecv[1],-1,-1);
             // print message here
             sendMessage(replyMsg,queryRecv[2],processQueryNumMappingSend);
             printf("Sent reply to process %d for union of (%ld,%ld)\n",queryRecv[2],queryRecv[4],queryRecv[5]);
         }
         else
         {
-            vector<long int> queryForward = createNewMessage(0,queryRecv[1],queryRecv[2],-1,retVal->query->newQueryX,retVal->query->newQueryY,-1);
+            vector<long int> queryForward = createNewMessage(0,queryRecv[1],queryRecv[2],-1,retVal->query->newQueryX,retVal->query->newQueryY);
             sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
             printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
         }
@@ -62,14 +62,14 @@ void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map
             {
                 queryNumSend = -1;
             }
-            vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY,-1);
+            vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY);
             sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
             printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
         }
     }
 }
 
-vector<long int> createNewMessage(int processDone,long int queryNum,int processRank, long int isReply, long int newQueryX, long int newQueryY,long int finalParent)
+vector<long int> createNewMessage(int processDone,long int queryNum,int processRank, long int isReply, long int newQueryX, long int newQueryY)
 {
     vector<long int> message;
     message.clear();
@@ -79,8 +79,23 @@ vector<long int> createNewMessage(int processDone,long int queryNum,int processR
     message.push_back(isReply);
     message.push_back(newQueryX);
     message.push_back(newQueryY);
+    message.resize(6);
+    return message;
+}
+
+vector<long int> createNewMessagePathCompression(int processDone,long int queryNum,int processRank, long int isReply, long int newQueryX, long int newQueryY,long int oldQueryY ,long int finalParent)
+{
+    vector<long int> message;
+    message.clear();
+    message.push_back((long int)processDone);
+    message.push_back(queryNum);
+    message.push_back((long int)processRank);
+    message.push_back(isReply);
+    message.push_back(newQueryX);
+    message.push_back(newQueryY);
+    message.push_back(oldQueryY);
     message.push_back(finalParent);// used in path compression
-    message.resize(7);
+    message.resize(8);
     return message;
 }
 
@@ -147,7 +162,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
         {
             queryNumSend = -1; // reply not required
         }
-        vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY,-1);
+        vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY);
         sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
         printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",x,y,retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
 
@@ -158,9 +173,9 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
             int src = status.MPI_SOURCE;
             int tag = status.MPI_TAG;
             vector<long int> queryRecv;
-            queryRecv.resize(7);
-            MPI_Recv(&queryRecv[0],7,MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-            processReceivedQuery(queryRecv,finished,replyRequired,src,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,queryNum,status);
+            queryRecv.resize(6);
+            MPI_Recv(&queryRecv[0],6,MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
+            processReceivedQuery(queryRecv,finished,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,queryNum,status);
         }
     }
     if((*replyRequired).size() > 0)
@@ -174,14 +189,14 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
                 int src = status.MPI_SOURCE;
                 int tag = status.MPI_TAG;
                 vector<long int> queryRecv;
-                queryRecv.resize(7);
-                MPI_Recv(&queryRecv[0],7,MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-                processReceivedQuery(queryRecv,finished,replyRequired,src,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,queryNum,status);
+                queryRecv.resize(6);
+                MPI_Recv(&queryRecv[0],6,MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
+                processReceivedQuery(queryRecv,finished,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,queryNum,status);
             }
         }
     }
     (*finished)[processRank - 1] = true;
-    vector<int> finishedMsg = createNewMessage(1,-1,-1,-1,-1,-1,-1);
+    vector<int> finishedMsg = createNewMessage(1,-1,-1,-1,-1,-1);
     for(int j = 1; j < num_processes; j++)
     {
         if(j == processRank)
@@ -210,9 +225,9 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
                 int src = status.MPI_SOURCE;
                 int tag = status.MPI_TAG;
                 vector<long int> queryRecv;
-                queryRecv.resize(7);
-                MPI_Recv(&queryRecv[0],7,MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-                processReceivedQuery(queryRecv,finished,replyRequired,src,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,queryNum,status);
+                queryRecv.resize(6);
+                MPI_Recv(&queryRecv[0],6,MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
+                processReceivedQuery(queryRecv,finished,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,queryNum,status);
             }
         }
         else
@@ -280,12 +295,12 @@ sendQuery* createQueryFwd(long int newQueryX, long int newQueryY, int toProcess,
     return query;
 }
 
-void processReceivedQueryPathCompression(vector<long int> queryRecv,vector<bool>* finished, map<long int,bool>* replyRequired, int src,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status)
+void processReceivedQueryPathCompression(vector<long int> queryRecv,vector<bool>* finished, map<long int,bool>* replyRequired,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status)
 {
     returnStruct* retVal;
     if(queryRecv[0] == 1) // means process that sent this message has finished its processing
     {
-        (*finished)[src - 1] = true;
+        (*finished)[status.MPI_SOURCE - 1] = true;
     }
     else if(queryRecv[3] > 0)
     {
@@ -298,14 +313,14 @@ void processReceivedQueryPathCompression(vector<long int> queryRecv,vector<bool>
         retVal = unify(queryRecv[4],queryRecv[5],unionfindDs,pointIdMapping,startIndex,processRank);
         if(retVal->query == NULL)
         {
-            vector<long int> replyMsg = createNewMessage(0,-1,-1,queryRecv[1],-1,-1,-1);
+            vector<long int> replyMsg = createNewMessage(0,-1,-1,queryRecv[1],-1,-1);
             // print message here
             sendMessage(replyMsg,queryRecv[2],processQueryNumMappingSend);
             printf("Sent reply to process %d for union of (%ld,%ld)\n",queryRecv[2],queryRecv[4],queryRecv[5]);
         }
         else
         {
-            vector<long int> queryForward = createNewMessage(0,queryRecv[1],queryRecv[2],-1,retVal->query->newQueryX,retVal->query->newQueryY,-1);
+            vector<long int> queryForward = createNewMessage(0,queryRecv[1],queryRecv[2],-1,retVal->query->newQueryX,retVal->query->newQueryY);
             sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
             printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
         }
@@ -330,7 +345,7 @@ void processReceivedQueryPathCompression(vector<long int> queryRecv,vector<bool>
             {
                 queryNumSend = -1;
             }
-            vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY,-1);
+            vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY);
             sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
             printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
         }
@@ -385,7 +400,7 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
         (*replyRequired)[*queryNum] = true;
         (*queryNum)++;
 
-        vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY,-1);
+        vector<long int> queryForward = createNewMessagePathCompression(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY,y,-1);
         sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
         printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",x,y,retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
 
@@ -396,9 +411,9 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
             int src = status.MPI_SOURCE;
             int tag = status.MPI_TAG;
             vector<long int> queryRecv;
-            queryRecv.resize(7);
-            MPI_Recv(&queryRecv[0],7,MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-            processReceivedQuery(queryRecv,finished,replyRequired,src,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,queryNum,status);
+            queryRecv.resize(8);
+            MPI_Recv(&queryRecv[0],8,MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
+            processReceivedQuery(queryRecv,finished,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,queryNum,status);
         }
     }
 }
