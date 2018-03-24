@@ -41,3 +41,6 @@ void addUpdate(long int queryNum,long int x,long int y,int process_of_y,int quer
 void addQuerytoSentQuerySet(long int queryNum,long int new_x,long int new_y,long int curr_x,long int curr_y,int process_of_curr_y,UnionFind* uf);
 vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess);
 void doPathCompression(long int startNode,long int parent,int process_of_y,long int startIndex, UnionFind* uf);
+
+void generateQueryFiles(vector <int> numBucketsArr,vector <long int> numPointsArr,vector<float> queryPercentArr);
+void printUnionfindToFileVector(UnionFind* uf,long int numQueries);

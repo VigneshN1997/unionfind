@@ -1,5 +1,4 @@
-#include "unionfind_mod.cpp"
-
+#include "generateandTest.cpp"
 // vector<Result*> do_statistical_analysis(vector <int> numBucketsArr,vector <long int> numPointsArr,vector<float> queryPercentArr)
 // {
 // 	vector<Result*> statsVector;
@@ -53,18 +52,43 @@
 // 	return statsVector;
 // }
 
-
+void generateQueryFiles(vector <int> numBucketsArr,vector <long int> numPointsArr,vector<float> queryPercentArr)
+{
+	int i,j,k;
+	for(i = 0; i < numBucketsArr.size(); i++)
+	{
+		for(j = 0; j < numPointsArr.size(); j++)
+		{
+			for(k = 0; k < queryPercentArr.size(); k++)
+			{
+				long int numQueries = (long int)(queryPercentArr[k]*numPointsArr[j]);
+				generateRandomQueries(numQueries,numPointsArr[j],numBucketsArr[i]);
+			}
+		}
+	}
+}
 
 int main(int argc, char const *argv[])
 {
-	UnionFind* uf = init_unionfind(20,4);
-	long int* num_messages = (long int*)malloc(sizeof(long int));
-	long int x,y;
-	x = 1;
-	y = 2;
-	*num_messages = 0;
-	unifyOptimized(1,x,y,uf,uf->global_arr[x],uf->global_arr[y],num_messages,-1);
-	printf("union of (%ld,%ld) done, num_messages=%ld\n",x,y,*num_messages);
+	vector <int> numBucketsArr;
+	int smallestBucketSize = 8;
+	int i;
+	for(i = 0; i < 2; i++,smallestBucketSize *= 2)
+	{
+		numBucketsArr.push_back(smallestBucketSize);
+	}
+	// ,100000000,1000000000};
+	vector <long int> numPointsArr{1000000,50000000};
+	vector<float> queryPercentArr{0.2,0.5};
+	generateQueryFiles(numBucketsArr,numPointsArr,queryPercentArr);
+	// UnionFind* uf = init_unionfind(20,4);
+	// long int* num_messages = (long int*)malloc(sizeof(long int));
+	// long int x,y;
+	// x = 1;
+	// y = 2;
+	// *num_messages = 0;
+	// unifyOptimized(1,x,y,uf,uf->global_arr[x],uf->global_arr[y],num_messages,-1);
+	// printf("union of (%ld,%ld) done, num_messages=%ld\n",x,y,*num_messages);
 
 
 	// x = ;
