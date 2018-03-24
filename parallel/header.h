@@ -16,8 +16,9 @@ struct sendQeury
 {
 	long int newQueryX;
 	long int newQueryY;
+	long int finalParent; // used in path compression algorithm
 	int toProcess;
-	int fromProcess;
+	// int fromProcess;
 };
 
 struct returnStruct
