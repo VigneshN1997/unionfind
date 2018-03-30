@@ -1,8 +1,8 @@
 #include "unionfind_mod.h"
 
-UnionFind* init_unionfind(long int n,int num_arrays)
+UnionFind_mod* init_unionfindmod(long int n,int num_arrays)
 {
-	UnionFind* uf = (UnionFind*)malloc(sizeof(UnionFind));
+	UnionFind_mod* uf = (UnionFind_mod*)malloc(sizeof(UnionFind_mod));
 	long int num_elems_per_arr = n / num_arrays;
 	// uf->array = new vector<vector<int> >(num_arrays,vector<int>(num_elems_per_arr)); 
 	// uf->global_arr = new vector<id_proc>(n);
@@ -13,7 +13,7 @@ UnionFind* init_unionfind(long int n,int num_arrays)
 	return uf;
 }
 
-void random_initialize(UnionFind* uf,long int n,int num_arrays)
+void random_initialize1(UnionFind_mod* uf,long int n,int num_arrays)
 {
 	long int i,j,k;
 	for(i = 0; i < n; i++)
@@ -62,7 +62,7 @@ void random_initialize(UnionFind* uf,long int n,int num_arrays)
 	}
 }
 
-void addUpdate(long int queryNum,long int x,long int y,int process_of_y,int queryFromProcess,UnionFind* uf)
+void addUpdate(long int queryNum,long int x,long int y,int process_of_y,int queryFromProcess,UnionFind_mod* uf)
 {
 	queryParentMapping q;
 	q.query.clear();
@@ -73,7 +73,7 @@ void addUpdate(long int queryNum,long int x,long int y,int process_of_y,int quer
 	(uf->updatesDone)[process_of_y][queryFromProcess].push_back(q);
 }
 
-void addQuerytoSentQuerySet(long int queryNum,long int new_x,long int new_y,long int curr_x,long int curr_y,int process_of_curr_y,UnionFind* uf)
+void addQuerytoSentQuerySet(long int queryNum,long int new_x,long int new_y,long int curr_x,long int curr_y,int process_of_curr_y,UnionFind_mod* uf)
 {
 	vector<long int> sentQuery;
 	vector<long int> currXY;
@@ -89,7 +89,7 @@ void addQuerytoSentQuerySet(long int queryNum,long int new_x,long int new_y,long
 	(uf->unionQueriesSent)[process_of_curr_y][sentQuery] = currXY;
 }
 
-vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int y, UnionFind* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess)
+vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int y, UnionFind_mod* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess)
 {
 	long int root_y = y;
 	long int startIndex = process_of_y*uf->num_elems_per_arr;
@@ -189,7 +189,7 @@ vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int
 	return updateVec;
 }
 
-void doPathCompression(long int startNode,long int parent,int process_of_y,long int startIndex, UnionFind* uf)
+void doPathCompression(long int startNode,long int parent,int process_of_y,long int startIndex, UnionFind_mod* uf)
 {
 	long int node = startNode;
 	while(node < parent && uf->global_arr[node] == process_of_y)

@@ -1,4 +1,4 @@
-#include "unionfind_mod.cpp"
+#include "testing.h"
 
 /*
 This file is used for generating union find queries and also writing the final union find ds to file
@@ -7,8 +7,9 @@ This file is used for generating union find queries and also writing the final u
 void generateRandomQueries(long int numQueries, long int maxNum,int numBuckets)
 {
 
-	
-	FILE* fp = fopen("queryFile_"+ltoa(maxNum) + "_" + ltoa(numQueries) + "_" + itoa(numBuckets),"w");
+	string file_name = "queryFile_"+to_string(maxNum) + "_" + to_string(numQueries) + "_" + to_string(numBuckets);
+	ofstream queryFile(file_name,ios::out);
+	// FILE* fp = fopen("queryFile_"+ltoa(maxNum) + "_" + ltoa(numQueries) + "_" + itoa(numBuckets),"w");
 	const unsigned int range_from  = 0;
 	const unsigned int range_to    = UINT_MAX;
 	std::random_device                  rand_dev;
@@ -23,9 +24,13 @@ void generateRandomQueries(long int numQueries, long int maxNum,int numBuckets)
 		{
 			y = distr(generator)%maxNum;
 		}
-		fprintf(fp, "%ld %ld\n",(long int)x,(long int)y);
+		queryFile << x;
+		queryFile << " ";
+		queryFile << y;
+		queryFile << "\n";
+		// fprintf(fp, "%ld %ld\n",(long int)x,(long int)y);
 	}
-	fclose(fp);
+	// fclose(fp);
 }
 
 // void printUnionfindToFileMap(UnionFind* uf,long int numQueries)
@@ -49,7 +54,9 @@ void generateRandomQueries(long int numQueries, long int maxNum,int numBuckets)
 void printUnionfindToFileVector(UnionFind* uf,long int numQueries)
 {
 	int numBuckets = (int)(uf->num_elems/uf->num_elems_per_arr);
-	FILE* fp = fopen("unionfindDs_"+ltoa(uf->num_elems) + "_" + ltoa(numQueries) + "_" + itoa(numBuckets),"w");
+	string file_name = "unionfindDs_"+to_string(uf->num_elems) + "_" + to_string(numQueries) + "_" + to_string(numBuckets);
+	ofstream fp(file_name,ios::out);
+	// FILE* fp = fopen(,"w");
 	int num_processes = (uf->array).size();
 	int i;
 	long int j;
@@ -57,11 +64,17 @@ void printUnionfindToFileVector(UnionFind* uf,long int numQueries)
 	for(i = 0; i < num_processes; i++)
 	{
 		startIndex = i*uf->num_elems_per_arr;
-		fprintf(fp,"Points with process %d\n",i);
-		fprintf(fp, "Point Parent of point\n");
+		fp << "Points with process ";
+		fp << i;
+		fp << "\n";
+		fp << "Point |Parent of point\n";
 		for(j = 0; j < uf->num_elems_per_arr; j++)
 		{
-			fprintf(fp, "%ld:%ld\n",startIndex+j,uf->array[i][j]);
+			fp << startIndex+j;
+			fp << ":";
+			fp << uf->array[i][j];
+			fp << "\n";
+			// fprintf(fp, "%ld:%ld\n",startIndex+j,uf->array[i][j]);
 		}
 	}
 }
