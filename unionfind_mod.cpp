@@ -257,7 +257,56 @@ void unifyOptimized(long int queryNum, Query q, UnionFind_mod* uf, int process_o
 	}
 }
 
-// void doPathCompressionOfRemainingUpdates(UnionFind_mod* uf)
-// {
+void doPathCompressionOfRemainingUpdates(UnionFind_mod* uf)
+{
+	bool complete = true;
+	int i, j;
+	int num_processes = (uf->array).size();
+	while(true)
+	{
+		for(i = 0; i < num_processes; i++)
+		{
+			for(j = 0; j < num_processes; j++)
+			{
+				if(j == i)
+				{
+					continue;
+				}
+				if((uf->updatesDone)[i][j].size() != 0)
+				{
+					complete = false;
+					sendAndProcessUpdates((uf->updatesDone)[i][j],uf,j);
+				}
+			}
+		}
+		if(complete)
+		{
+			break;
+		}
+		complete = true;
+	}
+}
 
-// }
+void sendAndProcessUpdates(vector<queryParentMapping> updatesToDo, UnionFind_mod* uf, int process_of_y)
+{
+	long int startIndex = process_of_y*uf->num_elems_per_arr;
+	vector<queryParentMapping>::iterator itr;
+	for(itr = updatesToDo.begin(); itr != updatesToDo.end(); itr++)
+	{
+		vector<long int> query = itr->query;
+		long int parent = itr->parent;
+		map<vector<long int>, vector<long int> >::iterator map_itr = (uf->unionQueriesSent)[process_of_y].find(query);
+		if(map_itr != (uf->unionQueriesSent)[process_of_y].end())
+		{
+			vector<long int> currXYforQuery = map_itr->second;
+			doPathCompression(currXYforQuery[1],parent,process_of_y,startIndex,uf);
+			(uf->unionQueriesSent)[process_of_y].erase(map_itr);	
+		}
+		map<vector<long int>, int>::iterator reply_itr = (uf->queriesToBeReplied)[process_of_y].find(query);
+		if(reply_itr != (uf->queriesToBeReplied)[process_of_y].end())
+		{
+			addUpdate(query[0],query[1],query[2],parent,process_of_y,reply_itr->second,uf);
+			(uf->queriesToBeReplied)[process_of_y].erase(reply_itr);
+		}
+	}
+}

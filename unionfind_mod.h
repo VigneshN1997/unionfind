@@ -39,3 +39,6 @@ void addUpdate(long int queryNum,long int original_x,long int original_y,long in
 void addQuerytoSentQuerySet(long int queryNum,Query q,int process_of_query_y,UnionFind_mod* uf);
 void addQueryToQueriesToBeReplied(long int queryNum, long int original_x, long int original_y, int processToSendReplyTo,int currProcess,UnionFind_mod* uf);
 Query createNewQuery(long int original_x, long int original_y, long int query_x, long int query_y);
+
+void doPathCompressionOfRemainingUpdates(UnionFind_mod* uf);
+void sendAndProcessUpdates(vector<queryParentMapping> updatesToDo, UnionFind_mod* uf, int process_of_y);
