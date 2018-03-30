@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <ctime>
 #include <algorithm>
+#include <sys/stat.h>
 using namespace std;
 
 typedef struct

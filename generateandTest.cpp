@@ -4,10 +4,37 @@
 This file is used for generating union find queries and also writing the final union find ds to file
 */
 
+bool exists_test(string file_name)
+{
+	struct stat buffer;
+	return (stat(file_name.c_str(), &buffer) == 0);
+}
+
+void generateQueryFiles(vector <int> numBucketsArr,vector <long int> numPointsArr,vector<float> queryPercentArr)
+{
+	int i,j,k;
+	for(i = 0; i < numBucketsArr.size(); i++)
+	{
+		for(j = 0; j < numPointsArr.size(); j++)
+		{
+			for(k = 0; k < queryPercentArr.size(); k++)
+			{
+				long int numQueries = (long int)(queryPercentArr[k]*numPointsArr[j]);
+				generateRandomQueries(numQueries,numPointsArr[j],numBucketsArr[i]);
+			}
+		}
+	}
+}
+
 void generateRandomQueries(long int numQueries, long int maxNum,int numBuckets)
 {
 
 	string file_name = "queryFile_"+to_string(maxNum) + "_" + to_string(numQueries) + "_" + to_string(numBuckets);
+	if(exists_test(file_name))
+	{
+		printf("file %s exists\n",file_name.c_str());
+		return;
+	}
 	ofstream queryFile(file_name,ios::out);
 	// FILE* fp = fopen("queryFile_"+ltoa(maxNum) + "_" + ltoa(numQueries) + "_" + itoa(numBuckets),"w");
 	const unsigned int range_from  = 0;
@@ -30,34 +57,40 @@ void generateRandomQueries(long int numQueries, long int maxNum,int numBuckets)
 		queryFile << "\n";
 		// fprintf(fp, "%ld %ld\n",(long int)x,(long int)y);
 	}
-	// fclose(fp);
+	queryFile.close();
 }
 
-// void printUnionfindToFileMap(UnionFind* uf,long int numQueries)
-// {
-// 	int numBuckets = (int)(uf->num_elems/uf->num_elems_per_arr);
-// 	FILE* fp = fopen("unionfindDs_"+ltoa(uf->num_elems) + "_" + ltoa(numQueries) + "_" + itoa(numBuckets),"w");
-// 	int num_processes = (uf->array).size();
-// 	int i;
-// 	map<long int,long int>::iterator j;
-// 	for(i = 0; i < num_processes; i++)
-// 	{
-// 		fprintf(fp,"Points with process %d\n",i);
-// 		for(j = array[i].begin(); j != array[i].end(); j++)
-// 		{
-// 			fprintf(fp, "%ld:%ld\n",j->first,j->second);
-// 		}
-// 	}
-// }
-
-
-void printUnionfindToFileVector(UnionFind* uf,long int numQueries)
+void printUnionfindToFileMap(UnionFind* uf,long int numQueries)
 {
-	int numBuckets = (int)(uf->num_elems/uf->num_elems_per_arr);
-	string file_name = "unionfindDs_"+to_string(uf->num_elems) + "_" + to_string(numQueries) + "_" + to_string(numBuckets);
+	int num_processes = (uf->array).size();
+	string file_name = "unionfindDs_"+to_string(uf->num_elems) + "_" + to_string(numQueries) + "_" + to_string(num_processes);
+	ofstream fp(file_name,ios::out);
+	int i;
+	map<long int,long int>::iterator j;
+	for(i = 0; i < num_processes; i++)
+	{
+		fp << "Points with process ";
+		fp << i;
+		fp << "\n";
+		fp << "Point |Parent of point\n";
+		for(j = uf->array[i].begin(); j != uf->array[i].end(); j++)
+		{
+			fp << j->first;
+			fp << ":";
+			fp << j->second;
+			fp << "\n";
+		}
+	}
+	fp.close();
+}
+
+
+void printUnionfindToFileVector(UnionFind_mod* uf,long int numQueries)
+{
+	int num_processes = (uf->array).size();
+	string file_name = "unionfindDsMod_"+to_string(uf->num_elems) + "_" + to_string(numQueries) + "_" + to_string(num_processes);
 	ofstream fp(file_name,ios::out);
 	// FILE* fp = fopen(,"w");
-	int num_processes = (uf->array).size();
 	int i;
 	long int j;
 	long int startIndex;
@@ -74,7 +107,7 @@ void printUnionfindToFileVector(UnionFind* uf,long int numQueries)
 			fp << ":";
 			fp << uf->array[i][j];
 			fp << "\n";
-			// fprintf(fp, "%ld:%ld\n",startIndex+j,uf->array[i][j]);
 		}
 	}
+	fp.close();
 }

@@ -2,12 +2,22 @@
 
 typedef struct
 {
-	vector<long int> query; // vector of size 3(First 2 elements contain query, third element contains parent set)
+	vector<long int> query; // vector of size 3(queryNum, original_x, original_y)
 	long int parent;
 }queryParentMapping;
 
-// queryParentMapping: stores (queryNum,x,y) -> id of parent set
-// unionQueriesSent: vector of size 4: (queryNum,x,y -> sent) to  (x,y) -> of the current function
+// queryParentMapping: stores (queryNum,x,y) -> id of parent set -> will be used for deferred updates
+// unionQueriesSent: (queryNum,original_x, original_y) to  (a,b) (i.e. (x,y) of the current function) -> will be used for path compression
+// queriesToBeReplied: (queryNum,original_x, original_y) to processNum (process from which this query came -> store the update in that corresponding updatesDone vector)
+
+typedef struct 
+{
+	long int original_x; 	// original x for query
+	long int original_y; 	// original y for query
+	long int query_x;		// current x(the process receiving the query will start traversal with this x,y)
+	long int query_y;
+}Query;
+
 typedef struct
 {
 	long int num_elems;
@@ -16,11 +26,16 @@ typedef struct
 	vector<int> global_arr;
 	vector<map<int, vector<queryParentMapping> > > updatesDone;
 	vector<map<vector<long int>, vector<long int> > > unionQueriesSent;
+	vector<map<vector<long int>, int> > queriesToBeReplied;
 }UnionFind_mod;
 
 UnionFind_mod* init_unionfindmod(long int n,int num_arrays);
 void random_initialize1(UnionFind_mod* uf,long int n,int num_arrays);
-void addUpdate(long int queryNum,long int x,long int y,int process_of_y,int queryFromProcess,UnionFind_mod* uf);
-void addQuerytoSentQuerySet(long int queryNum,long int new_x,long int new_y,long int curr_x,long int curr_y,int process_of_curr_y,UnionFind_mod* uf);
-vector<queryParentMapping> unifyOptimized(long int queryNum,long int x, long int y, UnionFind_mod* uf,int process_of_x,int process_of_y,long int* num_messages,int queryFromProcess);
+void unifyOptimized(long int queryNum, Query q, UnionFind_mod* uf, int process_of_x, int process_of_y, long int* num_messages, vector<queryParentMapping> updatesToDo, int queryFromProcess);
 void doPathCompression(long int startNode,long int parent,int process_of_y,long int startIndex, UnionFind_mod* uf);
+
+
+void addUpdate(long int queryNum,long int original_x,long int original_y,long int parent,int process_of_y,int queryFromProcess,UnionFind_mod* uf);
+void addQuerytoSentQuerySet(long int queryNum,Query q,int process_of_query_y,UnionFind_mod* uf);
+void addQueryToQueriesToBeReplied(long int queryNum, long int original_x, long int original_y, int processToSendReplyTo,int currProcess,UnionFind_mod* uf);
+Query createNewQuery(long int original_x, long int original_y, long int query_x, long int query_y);
