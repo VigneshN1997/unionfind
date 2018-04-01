@@ -9,7 +9,8 @@ int main(int argc, char const *argv[])
 	MPI_Status status;
 	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
 
-	long int numPoints = atol(argv[1]); // 
+	long int numPoints = atol(argv[3]); // 
+	printf("numPoints:%ld\n",numPoints);
 	long int numPointsPerProcess = (long int)(numPoints/(num_processes - 1));
 	numPoints = numPointsPerProcess*(num_processes-1);
 	
@@ -82,7 +83,7 @@ int main(int argc, char const *argv[])
 	vector<long int> queriesProcessY;
 	if(my_rank == 0) // rank 0 process will give queries to all other processes
 	{
-		long int numQueries = atol(argv[2]); // 
+		long int numQueries = atol(argv[4]); // 
 		// printf("numQueries:%ld\n",numQueries);
 		// for generating random numbers
 		const unsigned int range_from  = 0;

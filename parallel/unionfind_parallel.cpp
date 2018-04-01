@@ -24,8 +24,6 @@ void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map
         printf("Received reply for queryNumber %ld by process %d from process %d\n",queryRecv[3],processRank,status.MPI_SOURCE);
         map<long int,bool>::iterator map_itr = (*replyRequired).find(queryRecv[3]);
         (*replyRequired).erase(map_itr);
-        // do path compression
-        doPathCompression(queryRecv[6],queryRecv[]);
     }
     else if(queryRecv[1] > 0)
     {
@@ -35,13 +33,13 @@ void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map
             vector<long int> replyMsg = createNewMessage(0,-1,-1,queryRecv[1],-1,-1);
             // print message here
             sendMessage(replyMsg,queryRecv[2],processQueryNumMappingSend);
-            printf("Sent reply to process %d for union of (%ld,%ld)\n",queryRecv[2],queryRecv[4],queryRecv[5]);
+            printf("Sent reply to process %d for union of (%ld,%ld)\n",(int)queryRecv[2],queryRecv[4],queryRecv[5]);
         }
         else
         {
             vector<long int> queryForward = createNewMessage(0,queryRecv[1],queryRecv[2],-1,retVal->query->newQueryX,retVal->query->newQueryY);
             sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
-            printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
+            printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,(*processQueryNumMappingSend)[retVal->query->toProcess] - 1);
         }
     }
     else
@@ -66,7 +64,7 @@ void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map
             }
             vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY);
             sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
-            printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
+            printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,(*processQueryNumMappingSend)[retVal->query->toProcess] - 1);
         }
     }
 }
@@ -151,7 +149,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
         }
         vector<long int> queryForward = createNewMessage(0,queryNumSend,processRank,-1,retVal->query->newQueryX,retVal->query->newQueryY);
         sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
-        printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",x,y,retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
+        printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",x,y,retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,(*processQueryNumMappingSend)[retVal->query->toProcess] - 1);
 
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&flag,&status);
         if(flag)
@@ -183,7 +181,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
         }
     }
     (*finished)[processRank - 1] = true;
-    vector<int> finishedMsg = createNewMessage(1,-1,-1,-1,-1,-1);
+    vector<long int> finishedMsg = createNewMessage(1,-1,-1,-1,-1,-1);
     for(int j = 1; j < num_processes; j++)
     {
         if(j == processRank)
@@ -197,7 +195,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
     {
         for(int j = 1; j < num_processes; j++)
         {
-            if(!finished[j - 1])
+            if(!(*finished)[j - 1])
             {
                 completed = false;
                 break;
