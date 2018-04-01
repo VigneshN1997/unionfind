@@ -87,7 +87,7 @@ void printUnionfindToFileMap(UnionFind* uf,long int numQueries)
 
 void printUnionfindToFileVector(UnionFind_mod* uf,long int numQueries)
 {
-	int num_processes = (uf->array).size();
+	int num_processes = uf->num_elems / uf->num_elems_per_arr;
 	string file_name = "unionfindDsMod_"+to_string(uf->num_elems) + "_" + to_string(numQueries) + "_" + to_string(num_processes);
 	ofstream fp(file_name,ios::out);
 	// FILE* fp = fopen(,"w");

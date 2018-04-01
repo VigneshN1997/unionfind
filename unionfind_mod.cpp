@@ -4,11 +4,13 @@ UnionFind_mod* init_unionfindmod(long int n,int num_arrays)
 {
 	UnionFind_mod* uf = (UnionFind_mod*)malloc(sizeof(UnionFind_mod));
 	long int num_elems_per_arr = n / num_arrays;
-	// uf->array = new vector<vector<int> >(num_arrays,vector<int>(num_elems_per_arr)); 
-	// uf->global_arr = new vector<id_proc>(n);
-	(uf->array).clear();
+	// uf->array = new vector<vector<long int> >(num_arrays,vector<int>(num_elems_per_arr)); 
+	// (uf->array).clear();
 	uf->num_elems = num_elems_per_arr*num_arrays;
 	uf->num_elems_per_arr = num_elems_per_arr;
+	uf->array = (long int**)malloc(num_arrays*sizeof(long int*));
+	uf->global_arr = (int*)malloc(uf->num_elems*sizeof(int));
+	// uf->global_arr = new vector<id_proc>(uf->num_elems);
 	random_initialize1(uf,uf->num_elems,num_arrays);
 	return uf;
 }
@@ -16,9 +18,10 @@ UnionFind_mod* init_unionfindmod(long int n,int num_arrays)
 void random_initialize1(UnionFind_mod* uf,long int n,int num_arrays)
 {
 	long int i,j,k;
+	// (uf->global_arr).resize(n);
 	for(i = 0; i < n; i++)
 	{
-		(uf->global_arr).push_back(-1);
+		(uf->global_arr)[i] = -1;
 	}
 	// printf("\n");
 	long int lower = 0;
@@ -26,45 +29,47 @@ void random_initialize1(UnionFind_mod* uf,long int n,int num_arrays)
 	int procRank = 0;
 	while(higher <= uf->num_elems)
 	{
-		vector<long int> procArr;
-		procArr.clear();
+		(uf->array)[procRank] = (long int*)malloc(uf->num_elems_per_arr*sizeof(long int));
 		for(long int k = lower; k < higher; k++)
 		{
-			procArr.push_back(k);
+			(uf->array)[procRank][k - lower] = k;
 			(uf->global_arr)[k] = procRank;
 		}
-		(uf->array).push_back(procArr);
 		lower = lower + uf->num_elems_per_arr;
 		higher = higher + uf->num_elems_per_arr;
 		procRank++;
 	}
-	for(i = 0; i < (uf->array).size(); i++)
+
+	uf->updatesDone = new vector<map<int, vector<queryParentMapping> > >(num_arrays);
+	uf->unionQueriesSent = new vector<map<vector<long int>, vector<long int> > >(num_arrays);
+	uf->queriesToBeReplied = new vector<map<vector<long int>, int> >(num_arrays);
+	for(i = 0; i < num_arrays; i++)
 	{
 		map<int, vector<queryParentMapping> > m;
 		m.clear();
-		for(j = 0; j < (uf->array).size(); j++)
+		for(j = 0; j < num_arrays; j++)
 		{
-			if(j == i)
-			{
-				continue;
-			}
+			// if(j == i)
+			// {
+			// 	continue;
+			// }
 			vector<queryParentMapping> vec;
 			vec.clear();
 			m[j] = vec;
 		}
-		(uf->updatesDone).push_back(m);
+		(*(uf->updatesDone)).at(i) = m;
 	}
-	for(i = 0; i < (uf->array).size(); i++)
+	for(i = 0; i < num_arrays; i++)
 	{
 		map<vector<long int>, vector<long int> > mappingOneProcess;
 		// mappingOneProcess.clear();
-		(uf->unionQueriesSent).push_back(mappingOneProcess);
+		(*(uf->unionQueriesSent)).at(i) = mappingOneProcess;
 	}
-	for(i = 0; i < (uf->array).size(); i++)
+	for(i = 0; i < num_arrays; i++)
 	{
 		map<vector<long int>, int > mappingOneProcess;
 		// mappingOneProcess.clear();
-		(uf->queriesToBeReplied).push_back(mappingOneProcess);
+		(*(uf->queriesToBeReplied)).at(i) = mappingOneProcess;
 	}
 }
 
@@ -76,7 +81,7 @@ void addUpdate(long int queryNum,long int original_x,long int original_y,long in
 	q.query.push_back(original_x);
 	q.query.push_back(original_y);
 	q.parent = parent;
-	(uf->updatesDone)[process_of_y][queryFromProcess].push_back(q); // add it to updates arr for deferred sending of update to process "queryFromProcess"
+	(*(uf->updatesDone))[process_of_y][queryFromProcess].push_back(q); // add it to updates arr for deferred sending of update to process "queryFromProcess"
 }
 
 void addQuerytoSentQuerySet(long int queryNum,Query q,int process_of_query_y,UnionFind_mod* uf)
@@ -92,7 +97,7 @@ void addQuerytoSentQuerySet(long int queryNum,Query q,int process_of_query_y,Uni
 	currXY.push_back(q.query_x);
 	currXY.push_back(q.query_y);
 
-	(uf->unionQueriesSent)[process_of_query_y][originalQuery] = currXY;
+	(*(uf->unionQueriesSent))[process_of_query_y][originalQuery] = currXY;
 }
 
 void addQueryToQueriesToBeReplied(long int queryNum, long int original_x, long int original_y, int processToSendReplyTo,int currProcess,UnionFind_mod* uf)
@@ -102,7 +107,7 @@ void addQueryToQueriesToBeReplied(long int queryNum, long int original_x, long i
 	originalQuery.push_back(queryNum);
 	originalQuery.push_back(original_x);
 	originalQuery.push_back(original_y);
-	(uf->queriesToBeReplied)[currProcess][originalQuery] = processToSendReplyTo;
+	(*(uf->queriesToBeReplied))[currProcess][originalQuery] = processToSendReplyTo;
 }
 
 void doPathCompression(long int startNode,long int parent,int process_of_y,long int startIndex, UnionFind_mod* uf)
@@ -150,18 +155,18 @@ void unifyOptimized(long int queryNum, Query q, UnionFind_mod* uf, int process_o
 		{
 			vector<long int> query = itr->query;
 			long int parent = itr->parent;
-			map<vector<long int>, vector<long int> >::iterator map_itr = (uf->unionQueriesSent)[process_of_y].find(query);
-			if(map_itr != (uf->unionQueriesSent)[process_of_y].end())
+			map<vector<long int>, vector<long int> >::iterator map_itr = (*(uf->unionQueriesSent))[process_of_y].find(query);
+			if(map_itr != (*(uf->unionQueriesSent))[process_of_y].end())
 			{
 				vector<long int> currXYforQuery = map_itr->second;
 				doPathCompression(currXYforQuery[1],parent,process_of_y,startIndex,uf);
-				(uf->unionQueriesSent)[process_of_y].erase(map_itr);	
+				(*(uf->unionQueriesSent))[process_of_y].erase(map_itr);	
 			}
-			map<vector<long int>, int>::iterator reply_itr = (uf->queriesToBeReplied)[process_of_y].find(query);
-			if(reply_itr != (uf->queriesToBeReplied)[process_of_y].end())
+			map<vector<long int>, int>::iterator reply_itr = (*(uf->queriesToBeReplied))[process_of_y].find(query);
+			if(reply_itr != (*(uf->queriesToBeReplied))[process_of_y].end())
 			{
 				addUpdate(query[0],query[1],query[2],parent,process_of_y,reply_itr->second,uf);
-				(uf->queriesToBeReplied)[process_of_y].erase(reply_itr);
+				(*(uf->queriesToBeReplied))[process_of_y].erase(reply_itr);
 			}
 		}
 	}
@@ -189,10 +194,10 @@ void unifyOptimized(long int queryNum, Query q, UnionFind_mod* uf, int process_o
 				findQuery.push_back(queryNum);
 				findQuery.push_back(q.original_x);
 				findQuery.push_back(q.original_y);
-				map<vector<long int>, int>::iterator quer_itr = (uf->queriesToBeReplied)[process_of_y].find(findQuery);
-				if(quer_itr != (uf->queriesToBeReplied)[process_of_y].end())
+				map<vector<long int>, int>::iterator quer_itr = (*(uf->queriesToBeReplied))[process_of_y].find(findQuery);
+				if(quer_itr != (*(uf->queriesToBeReplied))[process_of_y].end())
 				{
-					(uf->queriesToBeReplied)[process_of_y].erase(quer_itr);
+					(*(uf->queriesToBeReplied))[process_of_y].erase(quer_itr);
 				} 
 			}
 		}
@@ -208,10 +213,10 @@ void unifyOptimized(long int queryNum, Query q, UnionFind_mod* uf, int process_o
 				findQuery.push_back(queryNum);
 				findQuery.push_back(q.original_x);
 				findQuery.push_back(q.original_y);
-				map<vector<long int>, int>::iterator quer_itr = (uf->queriesToBeReplied)[process_of_y].find(findQuery);
-				if(quer_itr != (uf->queriesToBeReplied)[process_of_y].end())
+				map<vector<long int>, int>::iterator quer_itr = (*(uf->queriesToBeReplied))[process_of_y].find(findQuery);
+				if(quer_itr != (*(uf->queriesToBeReplied))[process_of_y].end())
 				{
-					(uf->queriesToBeReplied)[process_of_y].erase(quer_itr);
+					(*(uf->queriesToBeReplied))[process_of_y].erase(quer_itr);
 				}
 			}
 		}
@@ -220,8 +225,8 @@ void unifyOptimized(long int queryNum, Query q, UnionFind_mod* uf, int process_o
 		{
 			*num_messages += 1;
 			printf("query(%ld,%ld)=>(%ld,%ld) forwarded to %d from %d\n",q.query_x,q.query_y,root_y,q.query_x,process_of_x,process_of_y);
-			vector<queryParentMapping> updateVec = (uf->updatesDone)[process_of_y][process_of_x]; 
-			(uf->updatesDone)[process_of_y][process_of_x].clear();
+			vector<queryParentMapping> updateVec = (*(uf->updatesDone))[process_of_y][process_of_x]; 
+			(*(uf->updatesDone))[process_of_y][process_of_x].clear();
 			Query fwdQuery = createNewQuery(q.original_x,q.original_y,root_y,q.query_x);
 			addQuerytoSentQuerySet(queryNum,q,process_of_y,uf);
 			unifyOptimized(queryNum,fwdQuery,uf,process_of_y,process_of_x,num_messages,updateVec,process_of_y);
@@ -234,8 +239,8 @@ void unifyOptimized(long int queryNum, Query q, UnionFind_mod* uf, int process_o
 		{
 			*num_messages += 1;
 			printf("query(%ld,%ld)=>(%ld,%ld) forwarded to %d from %d\n",q.query_x,q.query_y,q.query_x,its_parent,uf->global_arr[its_parent],process_of_y);
-			vector<queryParentMapping> updateVec = (uf->updatesDone)[process_of_y][uf->global_arr[its_parent]]; 
-			(uf->updatesDone)[process_of_y][uf->global_arr[its_parent]].clear(); // check this
+			vector<queryParentMapping> updateVec = (*(uf->updatesDone))[process_of_y][uf->global_arr[its_parent]]; 
+			(*(uf->updatesDone))[process_of_y][uf->global_arr[its_parent]].clear(); // check this
 			Query fwdQuery = createNewQuery(q.original_x,q.original_y,q.query_x,its_parent);
 			addQuerytoSentQuerySet(queryNum,q,process_of_y,uf);
 			unifyOptimized(queryNum,fwdQuery,uf,process_of_x,uf->global_arr[its_parent],num_messages,updateVec,process_of_y);
@@ -244,8 +249,8 @@ void unifyOptimized(long int queryNum, Query q, UnionFind_mod* uf, int process_o
 		{
 			*num_messages += 1;
 			printf("query(%ld,%ld)=>(%ld,%ld) forwarded to %d from %d\n",q.query_x,q.query_y,its_parent,q.query_x,process_of_x,process_of_y);
-			vector<queryParentMapping> updateVec = (uf->updatesDone)[process_of_y][process_of_x]; 
-			(uf->updatesDone)[process_of_y][process_of_x].clear(); // check this
+			vector<queryParentMapping> updateVec = (*(uf->updatesDone))[process_of_y][process_of_x]; 
+			(*(uf->updatesDone))[process_of_y][process_of_x].clear(); // check this
 			Query fwdQuery = createNewQuery(q.original_x,q.original_y,its_parent,q.query_x);
 			addQuerytoSentQuerySet(queryNum,q,process_of_y,uf);
 			unifyOptimized(queryNum,fwdQuery,uf,uf->global_arr[its_parent],process_of_x,num_messages,updateVec,process_of_y);
@@ -261,21 +266,23 @@ void doPathCompressionOfRemainingUpdates(UnionFind_mod* uf)
 {
 	bool complete = true;
 	int i, j;
-	int num_processes = (uf->array).size();
+	int num_processes = uf->num_elems / uf->num_elems_per_arr;
 	while(true)
 	{
 		for(i = 0; i < num_processes; i++)
 		{
 			for(j = 0; j < num_processes; j++)
 			{
-				if(j == i)
-				{
-					continue;
-				}
-				if((uf->updatesDone)[i][j].size() != 0)
+				// if(j == i)
+				// {
+				// 	continue;
+				// }
+				if((*(uf->updatesDone))[i][j].size() > 0)
 				{
 					complete = false;
-					sendAndProcessUpdates((uf->updatesDone)[i][j],uf,j);
+					vector<queryParentMapping> updateVec = (*(uf->updatesDone))[i][j]; 
+					(*(uf->updatesDone))[i][j].clear();
+					sendAndProcessUpdates(updateVec,uf,j);
 				}
 			}
 		}
@@ -295,18 +302,18 @@ void sendAndProcessUpdates(vector<queryParentMapping> updatesToDo, UnionFind_mod
 	{
 		vector<long int> query = itr->query;
 		long int parent = itr->parent;
-		map<vector<long int>, vector<long int> >::iterator map_itr = (uf->unionQueriesSent)[process_of_y].find(query);
-		if(map_itr != (uf->unionQueriesSent)[process_of_y].end())
+		map<vector<long int>, vector<long int> >::iterator map_itr = (*(uf->unionQueriesSent))[process_of_y].find(query);
+		if(map_itr != (*(uf->unionQueriesSent))[process_of_y].end())
 		{
 			vector<long int> currXYforQuery = map_itr->second;
 			doPathCompression(currXYforQuery[1],parent,process_of_y,startIndex,uf);
-			(uf->unionQueriesSent)[process_of_y].erase(map_itr);	
+			(*(uf->unionQueriesSent))[process_of_y].erase(map_itr);	
 		}
-		map<vector<long int>, int>::iterator reply_itr = (uf->queriesToBeReplied)[process_of_y].find(query);
-		if(reply_itr != (uf->queriesToBeReplied)[process_of_y].end())
+		map<vector<long int>, int>::iterator reply_itr = (*(uf->queriesToBeReplied))[process_of_y].find(query);
+		if(reply_itr != (*(uf->queriesToBeReplied))[process_of_y].end())
 		{
 			addUpdate(query[0],query[1],query[2],parent,process_of_y,reply_itr->second,uf);
-			(uf->queriesToBeReplied)[process_of_y].erase(reply_itr);
+			(*(uf->queriesToBeReplied))[process_of_y].erase(reply_itr);
 		}
 	}
 }
