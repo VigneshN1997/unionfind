@@ -38,3 +38,7 @@ bool convertToBool(long int num);
 void processQueries(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes);
 returnStruct* unify(long int x, long int y, vector<long int>* unionfindDs, vector<int> pointIdMapping, long int startIndex,int process_of_y);
 sendQuery* createQueryFwd(long int newQueryX, long int newQueryY, int toProcess, long int finalParent);
+
+
+
+vector<long int> createNewMessagePathCompression(int processDone,long int queryNum,int processRank, long int originalQueryX, long int originalQueryY, long int newQueryX, long int newQueryY, long int isReply,long int finalParent);
