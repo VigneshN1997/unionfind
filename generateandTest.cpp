@@ -111,3 +111,9 @@ void printUnionfindToFileVector(UnionFind_mod* uf,long int numQueries)
 	}
 	fp.close();
 }
+
+void setTesting(UnionFind_mod* uf)
+{
+	vector<bool> setFound;
+}
+

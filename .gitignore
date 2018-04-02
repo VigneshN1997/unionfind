@@ -1,3 +1,5 @@
 queryFile_*
-test.cpp
 a.out
+test.cpp
+unionfindDs*
+old.cpp
