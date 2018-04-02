@@ -1,4 +1,4 @@
-#include "unionfind_parallel.cpp"
+#include "uf_parallel_path_compression.cpp"
 
 int main(int argc, char const *argv[])
 {
@@ -8,7 +8,7 @@ int main(int argc, char const *argv[])
 	int my_rank;
 	MPI_Status status;
 	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
-
+	printf("my_rank:%d\n",my_rank);
 	long int numPoints = atol(argv[3]); // 
 	printf("numPoints:%ld\n",numPoints);
 	long int numPointsPerProcess = (long int)(numPoints/(num_processes - 1));
@@ -26,45 +26,45 @@ int main(int argc, char const *argv[])
 	if(my_rank != 0)
 	{
 		unionfindDs = createArr(my_rank,numPointsPerProcess,pointIdMapping);
-		// for(int  i = 0; i < (*unionfindDs).size(); i++)
-		// {
-		// 	printf("process:%d i:%d parent:%d\n",my_rank,i,(int)(*unionfindDs)[i]);
-		// }
+		for(int  i = 0; i < (*unionfindDs).size(); i++)
+		{
+			printf("process:%d i:%d parent:%d\n",my_rank,i,(int)(*unionfindDs)[i]);
+		}
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	// testing if processes have the correct arrays
 
-	// if(my_rank != 0)
-	// {
-	// 	for(int i = 0; i < (*pointIdMapping).size(); i++)
-	// 	{
-	// 		printf("process:%d i:%d :%d\n",my_rank,i,(*pointIdMapping)[i]);
-	// 	}
-	// }
+	if(my_rank != 0)
+	{
+		for(int i = 0; i < (*pointIdMapping).size(); i++)
+		{
+			printf("process:%d i:%d :%d\n",my_rank,i,(*pointIdMapping)[i]);
+		}
+	}
 
 	if(my_rank == 0)
 	{
-		// vector<long int> recvArr;
+		vector<long int> recvArr;
 		vector<int> recvMappingArr;
-		// recvArr.resize(numPointsPerProcess);
+		recvArr.resize(numPointsPerProcess);
 		recvMappingArr.resize(numPointsPerProcess);
 		int procId;
 		for(procId = 1; procId < num_processes; procId++)
 		{
-			// MPI_Recv(&recvArr[0],numPointsPerProcess,MPI_LONG,procId,procId,MPI_COMM_WORLD,&status);
+			MPI_Recv(&recvArr[0],numPointsPerProcess,MPI_LONG,procId,procId,MPI_COMM_WORLD,&status);
 			MPI_Recv(&recvMappingArr[0],numPointsPerProcess,MPI_INT,procId,procId,MPI_COMM_WORLD,&status);
 
 
 			pointIdMappingMain.insert(pointIdMappingMain.begin() + (procId - 1)*numPointsPerProcess,recvMappingArr.begin(),recvMappingArr.end());
-			// printf("points of process %d\n",status.MPI_SOURCE);
-			// startIndex = (procId - 1)*numPointsPerProcess;
-			// endIndex = startIndex + numPointsPerProcess - 1;
-			// for(long int i = startIndex; i <= endIndex; i++)
-			// {
-			// 	printf("point:%ld parent:%ld\n",i,recvArr[i - startIndex]);
-			// }
-			// printf("---------------------------\n");
+			printf("points of process %d\n",status.MPI_SOURCE);
+			long int startIndex = (procId - 1)*numPointsPerProcess;
+			long int endIndex = startIndex + numPointsPerProcess - 1;
+			for(long int i = startIndex; i <= endIndex; i++)
+			{
+				printf("point:%ld parent:%ld\n",i,recvArr[i - startIndex]);
+			}
+			printf("---------------------------\n");
 		}
 		pointIdMappingMain.resize(numPoints);
 		for(int k = 0; k < pointIdMappingMain.size(); k++)
@@ -115,14 +115,14 @@ int main(int argc, char const *argv[])
 			queriesAllProcessesY[process_of_y - 1].push_back((long int)y);
 		}
 		// testing
-		// for(int i = 1; i < num_processes; i++)
-		// {
-		// 	printf("queries sent to process %d\n",i);
-		// 	for(long int j = 0; j < queriesAllProcessesX[i-1].size(); j++)
-		// 	{
-		// 		printf("(%ld,%ld)\n",queriesAllProcessesX[i-1][j],queriesAllProcessesY[i-1][j]);
-		// 	}
-		// }
+		for(int i = 1; i < num_processes; i++)
+		{
+			printf("queries sent to process %d\n",i);
+			for(long int j = 0; j < queriesAllProcessesX[i-1].size(); j++)
+			{
+				printf("(%ld,%ld)\n",queriesAllProcessesX[i-1][j],queriesAllProcessesY[i-1][j]);
+			}
+		}
 
 		// sending respective query arrays to respective processes
 		for(int i = 1; i < num_processes; i++)

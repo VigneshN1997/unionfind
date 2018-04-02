@@ -110,10 +110,10 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
     
     for(int j = 1; j < num_processes; j++)
     {
-        if(j == processRank)
-        {
-            continue;
-        }
+        // if(j == processRank)
+        // {
+        //     continue;
+        // }
         (*processQueryNumMappingSend)[j] = 0;
     }
     for(int j = 1; j < num_processes; j++)

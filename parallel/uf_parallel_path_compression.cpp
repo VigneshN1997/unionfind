@@ -1,3 +1,4 @@
+#include "unionfind_parallel.cpp"
 vector<long int> createNewMessagePathCompression(int processDone,long int queryNum,int processRank, long int originalQueryX, long int originalQueryY, long int newQueryX, long int newQueryY, long int isReply,long int finalParent)
 {
     vector<long int> message;
@@ -38,10 +39,10 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
     
     for(int j = 1; j < num_processes; j++)
     {
-        if(j == processRank)
-        {
-            continue;
-        }
+        // if(j == processRank)
+        // {
+        //     continue;
+        // }
         (*processQueryNumMappingSend)[j] = 0;
     }
     for(int j = 1; j < num_processes; j++)
@@ -151,7 +152,7 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
 }
 
 
-void processReceivedQueryPathCompression(vector<long int> queryRecv,vector<bool>* finished, map<vector<long int>, bool>* replyRequired,map<vector<long int>, int>* replyToBeSent,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status)
+void processReceivedQueryPathCompression(vector<long int> queryRecv,vector<bool>* finished, map<vector<long int>, vector<long int> >* replyRequired,map<vector<long int>, int>* replyToBeSent,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status)
 {
     returnStruct* retVal;
     if(queryRecv[0] == 1) // means process that sent this message has finished its processing
@@ -181,30 +182,13 @@ void processReceivedQueryPathCompression(vector<long int> queryRecv,vector<bool>
             (*replyRequired).erase(map_itr);
         }
     }
-    else if(queryRecv[1] > 0)
-    {
-        retVal = unify(queryRecv[4],queryRecv[5],unionfindDs,pointIdMapping,startIndex,processRank);
-        if(retVal->query == NULL)
-        {
-            vector<long int> replyMsg = createNewMessagePathCompression(0,-1,-1,queryRecv[1],-1,-1);
-            // print message here
-            sendMessage(replyMsg,queryRecv[2],processQueryNumMappingSend);
-            printf("Sent reply to process %d for union of (%ld,%ld)\n",queryRecv[2],queryRecv[4],queryRecv[5]);
-        }
-        else
-        {
-            vector<long int> queryForward = createNewMessagePathCompression(0,queryRecv[1],queryRecv[2],-1,retVal->query->newQueryX,retVal->query->newQueryY);
-            sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
-            printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[4],queryRecv[5],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,processQueryNumMappingSend[retVal->query->toProcess] - 1);
-        }
-    }
     else
     {
         retVal = unifyPathCompression(queryRecv[5],queryRecv[6],unionfindDs,pointIdMapping,startIndex,processRank);
-        if(retVal->query->final_parent != -1)
+        if(retVal->query->finalParent != -1)
         {
             printf("Union of %ld and %ld done by process %d\n",queryRecv[5],queryRecv[6],processRank);
-            vector<long int> replyMsg = createNewMessagePathCompression(0,-1,queryRecv[2],queryRecv[3],queryRecv[4],-1,-1,queryRecv[1],retVal->query->final_parent);
+            vector<long int> replyMsg = createNewMessagePathCompression(0,-1,queryRecv[2],queryRecv[3],queryRecv[4],-1,-1,queryRecv[1],retVal->query->finalParent);
             sendMessage(replyMsg,status.MPI_SOURCE,processQueryNumMappingSend);
         }
         else
@@ -230,7 +214,7 @@ void processReceivedQueryPathCompression(vector<long int> queryRecv,vector<bool>
 
 
 
-retVal* unifyPathCompression(long int x, long int y, vector<long int>* unionfindDs, vector<int> pointIdMapping, long int startIndex, int process_of_y)
+returnStruct* unifyPathCompression(long int x, long int y, vector<long int>* unionfindDs, vector<int> pointIdMapping, long int startIndex, int process_of_y)
 {
     long int root_y = y;
     long int its_parent = (*unionfindDs)[root_y - startIndex];
@@ -247,7 +231,7 @@ retVal* unifyPathCompression(long int x, long int y, vector<long int>* unionfind
     {
         if(root_y < x)
         {
-            (*unionfindDs[root_y - startIndex]) = x;
+            (*unionfindDs)[root_y - startIndex] = x;
             final_parent = (long int*)malloc(sizeof(long int));
             printf("set parent of %ld to %ld\n",root_y,x);
             *final_parent = x;
