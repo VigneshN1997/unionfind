@@ -167,6 +167,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
     {
         while((*replyRequired).size() > 0)
         {
+            printf("waiting for reply %d\n",processRank);
             MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
             if(flag)
             {
@@ -181,6 +182,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
         }
     }
     (*finished)[processRank - 1] = true;
+    printf("process:%d has finished.\n",processRank);
     vector<long int> finishedMsg = createNewMessage(1,-1,-1,-1,-1,-1);
     for(int j = 1; j < num_processes; j++)
     {
@@ -193,6 +195,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
     bool completed = true;
     while(true)
     {
+        // printf("aaaa%d\n",processRank);
         for(int j = 1; j < num_processes; j++)
         {
             if(!(*finished)[j - 1])
