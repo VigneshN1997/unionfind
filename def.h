@@ -13,6 +13,7 @@
 #include <ctime>
 #include <algorithm>
 #include <sys/stat.h>
+#include <bits/stdc++.h>
 using namespace std;
 
 typedef struct
@@ -25,8 +26,8 @@ typedef struct
 {
 	long int num_elems;
 	long int num_elems_per_arr;
-	vector<map<long int,long int> > array;
-	vector<id_proc> global_arr;
+	long int** array;
+	int* global_arr;
 }UnionFind;
 
 

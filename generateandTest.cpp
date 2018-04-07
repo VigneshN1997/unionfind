@@ -28,7 +28,8 @@ void generateQueryFiles(vector <int> numBucketsArr,vector <long int> numPointsAr
 
 void generateRandomQueries(long int numQueries, long int maxNum,int numBuckets)
 {
-
+	long int num_elems_per_arr = maxNum / numBuckets;
+	maxNum = num_elems_per_arr * numBuckets;
 	string file_name = "queryFile_"+to_string(maxNum) + "_" + to_string(numQueries) + "_" + to_string(numBuckets);
 	if(exists_test(file_name))
 	{
@@ -62,22 +63,25 @@ void generateRandomQueries(long int numQueries, long int maxNum,int numBuckets)
 
 void printUnionfindToFileMap(UnionFind* uf,long int numQueries)
 {
-	int num_processes = (uf->array).size();
-	string file_name = "unionfindDs_"+to_string(uf->num_elems) + "_" + to_string(numQueries) + "_" + to_string(num_processes);
+	int num_processes = uf->num_elems / uf->num_elems_per_arr;
+	string file_name = "unionfindDs"+to_string(uf->num_elems) + "_" + to_string(numQueries) + "_" + to_string(num_processes);
 	ofstream fp(file_name,ios::out);
+	// FILE* fp = fopen(,"w");
 	int i;
-	map<long int,long int>::iterator j;
+	long int j;
+	long int startIndex;
 	for(i = 0; i < num_processes; i++)
 	{
+		startIndex = i*uf->num_elems_per_arr;
 		fp << "Points with process ";
 		fp << i;
 		fp << "\n";
 		fp << "Point |Parent of point\n";
-		for(j = uf->array[i].begin(); j != uf->array[i].end(); j++)
+		for(j = 0; j < uf->num_elems_per_arr; j++)
 		{
-			fp << j->first;
+			fp << startIndex+j;
 			fp << ":";
-			fp << j->second;
+			fp << uf->array[i][j];
 			fp << "\n";
 		}
 	}
