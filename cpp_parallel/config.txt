@@ -1,0 +1,2 @@
+numPoints=20
+numQueries=10
