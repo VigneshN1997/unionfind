@@ -10,22 +10,20 @@ int main(int argc, char const *argv[])
 	MPI_Status status;
 	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
 	// printf("my_rank:%d\n",my_rank);
-	map<string, int> config = getConfig("config.txt");
 	long int numPoints = atol(argv[1]); // 
 	// printf("numPoints:%ld\n",numPoints);
 	long int numPointsPerProcess = (long int)(numPoints/(num_processes - 1));
 	numPoints = numPointsPerProcess*(num_processes-1);
 	
 	// should all processes create this global array or should only process 0(master) have this array
-	vector<int> pointIdMappingMain;
-	pointIdMappingMain.resize(numPoints);
+	vector<int> pointIdMappingMain(numPoints);
 	vector<int>* pointIdMapping = NULL;
 	if(my_rank != 0)
 	{	
-		pointIdMapping = new vector<int>();
+		pointIdMapping = new vector<int>(numPointsPerProcess);
 	}
 	// union find array of process my_rank
-	long int* unionfindDs = NULL;
+	vector<long int>* unionfindDs = NULL;
 	if(my_rank != 0)
 	{
 		unionfindDs = createArr(my_rank,numPointsPerProcess,pointIdMapping);

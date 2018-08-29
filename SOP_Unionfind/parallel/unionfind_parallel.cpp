@@ -1,6 +1,6 @@
 #include "preprocess.cpp"
 
-void sendMessage(vector<long int> queryForward, int toProcess,unordered_map<int,int>* processQueryNumMappingSend)
+void sendMessage(vector<long int> queryForward, int toProcess,map<int,int>* processQueryNumMappingSend)
 {
     MPI_Request request;
     MPI_Isend(&queryForward[0],queryForward.size(),MPI_LONG,toProcess,(*processQueryNumMappingSend)[toProcess],MPI_COMM_WORLD,&request);
@@ -12,7 +12,7 @@ void sendMessage(vector<long int> queryForward, int toProcess,unordered_map<int,
     }
 }
 
-void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, unordered_map<long int,bool>* replyRequired,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,unordered_map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status)
+void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map<long int,bool>* replyRequired,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status)
 {
     returnStruct* retVal;
     if(queryRecv[0] == 1) // means process that sent this message has finished its processing
@@ -22,7 +22,7 @@ void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, uno
     else if(queryRecv[3] > 0)
     {
         printf("Received reply for queryNumber %ld by process %d from process %d\n",queryRecv[3],processRank,status.MPI_SOURCE);
-        unordered_map<long int,bool>::iterator map_itr = (*replyRequired).find(queryRecv[3]);
+        map<long int,bool>::iterator map_itr = (*replyRequired).find(queryRecv[3]);
         (*replyRequired).erase(map_itr);
     }
     else if(queryRecv[1] > 0)
@@ -95,8 +95,8 @@ bool convertToBool(long int num)
 
 void processQueries(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes)
 {
-    unordered_map<int, int>* processQueryNumMappingSend = new unordered_map<int,int>(); // mapping from process number to tag
-    unordered_map<long int, bool>* replyRequired = new unordered_map<long int, bool>(); // mapping from query number to true
+    map<int, int>* processQueryNumMappingSend = new map<int,int>(); // mapping from process number to tag
+    map<long int, bool>* replyRequired = new map<long int, bool>(); // mapping from query number to true
     long int* queryNum = (long int*)malloc(sizeof(long int)); // used only when a query is sent to a process which has finished
     *queryNum = 0;
     vector<bool>* finished = new vector<bool>(num_processes);

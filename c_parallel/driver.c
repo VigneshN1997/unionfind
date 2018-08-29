@@ -10,19 +10,17 @@ int main(int argc, char const *argv[])
 	MPI_Status status;
 	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
 	// printf("my_rank:%d\n",my_rank);
-	map<string, int> config = getConfig("config.txt");
 	long int numPoints = atol(argv[1]); // 
 	// printf("numPoints:%ld\n",numPoints);
 	long int numPointsPerProcess = (long int)(numPoints/(num_processes - 1));
 	numPoints = numPointsPerProcess*(num_processes-1);
 	
 	// should all processes create this global array or should only process 0(master) have this array
-	vector<int> pointIdMappingMain;
-	pointIdMappingMain.resize(numPoints);
-	vector<int>* pointIdMapping = NULL;
+	int* pointIdMappingMain = (int*)malloc(numPoints*sizeof(int));
+	int* pointIdMapping = NULL;
 	if(my_rank != 0)
 	{	
-		pointIdMapping = new vector<int>();
+		pointIdMapping = (int*)malloc(numPointsPerProcess*sizeof(int));
 	}
 	// union find array of process my_rank
 	long int* unionfindDs = NULL;
@@ -50,18 +48,11 @@ int main(int argc, char const *argv[])
 
 	if(my_rank == 0)
 	{
-		vector<long int> recvArr;
-		vector<int> recvMappingArr;
-		recvArr.resize(numPointsPerProcess);
-		recvMappingArr.resize(numPointsPerProcess);
 		int procId;
 		for(procId = 1; procId < num_processes; procId++)
 		{
 			// MPI_Recv(&recvArr[0],numPointsPerProcess,MPI_LONG,procId,procId,MPI_COMM_WORLD,&status);
-			MPI_Recv(&recvMappingArr[0],numPointsPerProcess,MPI_INT,procId,procId,MPI_COMM_WORLD,&status);
-
-
-			pointIdMappingMain.insert(pointIdMappingMain.begin() + (procId - 1)*numPointsPerProcess,recvMappingArr.begin(),recvMappingArr.end());
+			MPI_Recv(pointIdMappingMain + (procId - 1)*numPointsPerProcess,numPointsPerProcess,MPI_INT,procId,procId,MPI_COMM_WORLD,&status);
 			// printf("points of process %d\n",status.MPI_SOURCE);
 			// long int startIndex = (procId - 1)*numPointsPerProcess;
 			// long int endIndex = startIndex + numPointsPerProcess - 1;
@@ -71,8 +62,7 @@ int main(int argc, char const *argv[])
 			// }
 			// printf("---------------------------\n");
 		}
-		pointIdMappingMain.resize(numPoints);
-		for(int k = 0; k < pointIdMappingMain.size(); k++)
+		for(int k = 0; k < numPoints; k++)
 		{
 			printf("i:%d process:%d\n",k,pointIdMappingMain[k]);
 		}
@@ -80,9 +70,9 @@ int main(int argc, char const *argv[])
 	else
 	{
 		// MPI_Send(&(*unionfindDs)[0],numPointsPerProcess,MPI_LONG,0,my_rank,MPI_COMM_WORLD);
-		MPI_Send(&(*pointIdMapping)[0],numPointsPerProcess,MPI_INT,0,my_rank,MPI_COMM_WORLD);
+		MPI_Send(pointIdMapping,numPointsPerProcess,MPI_INT,0,my_rank,MPI_COMM_WORLD);
 	}
-	MPI_Bcast(&pointIdMappingMain[0],pointIdMappingMain.size(),MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(pointIdMappingMain,numPoints,MPI_INT,0,MPI_COMM_WORLD);
 	// create random queries
 	vector<long int> queriesProcessX;
 	vector<long int> queriesProcessY;

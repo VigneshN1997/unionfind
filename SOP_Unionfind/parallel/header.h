@@ -3,13 +3,13 @@
 #include <cstdlib>
 #include <vector>
 #include <iostream>
+#include <bits/stdc++.h>
 #include <cmath>
 #include <string>
 #include <fstream>
 #include <random>
 #include <algorithm>
 #include <climits>
-#include <unordered_map>
 using namespace std;
 
 struct sendQuery
@@ -30,9 +30,7 @@ struct returnStruct
 typedef struct sendQuery sendQuery;
 typedef struct returnStruct returnStruct;
 
-
-
-
+vector<long int>* createArr(int processRank, long int numPointsPerProcess,vector<int>* pointIdMapping);
 void sendMessage(vector<long int> queryForward, int toProcess,map<int,int>* processQueryNumMappingSend);
 void processReceivedQuery(vector<long int> queryRecv,vector<bool>* finished, map<long int,bool>* replyRequired,vector<long int>* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,map<int,int>* processQueryNumMappingSend,long int* queryNum,MPI_Status status);
 vector<long int> createNewMessage(int processDone,long int queryNum,int processRank, long int isReply, long int newQueryX, long int newQueryY);
