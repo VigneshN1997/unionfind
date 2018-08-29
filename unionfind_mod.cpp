@@ -308,14 +308,14 @@ void sendAndProcessUpdates(vector<queryParentMapping> updatesToDo, UnionFind_mod
 	{
 		long int query = itr->query;
 		long int parent = itr->parent;
-		unordered_map<vector<long int>, vector<long int> >::iterator map_itr = (*(uf->unionQueriesSent))[process_of_y].find(query);
+		unordered_map<long int, vector<long int> >::iterator map_itr = (*(uf->unionQueriesSent))[process_of_y].find(query);
 		if(map_itr != (*(uf->unionQueriesSent))[process_of_y].end())
 		{
 			vector<long int> currXYforQuery = map_itr->second;
 			doPathCompression(currXYforQuery[1],parent,process_of_y,startIndex,uf);
 			(*(uf->unionQueriesSent))[process_of_y].erase(map_itr);	
 		}
-		unordered_map<vector<long int>, int>::iterator reply_itr = (*(uf->queriesToBeReplied))[process_of_y].find(query);
+		unordered_map<long int, int>::iterator reply_itr = (*(uf->queriesToBeReplied))[process_of_y].find(query);
 		if(reply_itr != (*(uf->queriesToBeReplied))[process_of_y].end())
 		{
 			addUpdate(query,parent,process_of_y,reply_itr->second,uf);
