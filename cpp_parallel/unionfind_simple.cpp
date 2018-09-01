@@ -42,13 +42,13 @@ void processReceivedQuery(vector<long int> queryRecv, unordered_map<long int,boo
 
 // message type: 1-query forward, 2-reply, 3-processing of a process finished
 
-vector<long int> createNewMessage(long int messageType, long int queryNum, int processRank, long int newQueryX, long int newQueryY)
+vector<long int> createNewMessage(long int messageType, long int queryNum, long int processRank, long int newQueryX, long int newQueryY)
 {
     vector<long int> message;
     message.clear();
     message.push_back(messageType);
     message.push_back(queryNum);
-    message.push_back((long int)processRank);
+    message.push_back(processRank);
     message.push_back(newQueryX);
     message.push_back(newQueryY);
     message.resize(5);
@@ -71,10 +71,6 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
     
     for(int j = 1; j < num_processes; j++)
     {
-        if(j == processRank)
-        {
-            continue;
-        }
         (*processQueryNumMappingSend)[j] = 0;
     }
 
@@ -90,7 +86,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
         returnStruct* retVal = unify(x,y,unionfindDs,pointIdMapping,startIndex,processRank);
         if(retVal->query == NULL)
         {
-            printf("Union of %ld and %ld done by process %d(no forwarding)\n",x,y,processRank);
+            // printf("Union of %ld and %ld done by process %d(no forwarding)\n",x,y,processRank);
             continue;
         }
 
@@ -98,7 +94,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
         queryNumSend = i;
         (*replyRequired)[i] = true;
 
-        vector<long int> queryForward = createNewMessage(1,queryNumSend,processRank,retVal->query->newQueryX,retVal->query->newQueryY);
+        vector<long int> queryForward = createNewMessage(1,queryNumSend,(long int)processRank,retVal->query->newQueryX,retVal->query->newQueryY);
         sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
         printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",x,y,retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,(*processQueryNumMappingSend)[retVal->query->toProcess] - 1);
 
