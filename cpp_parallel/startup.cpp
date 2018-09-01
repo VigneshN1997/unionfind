@@ -1,4 +1,4 @@
-#include "unionfind_simple.cpp"
+#include "unionfind_pathc.cpp"
 int main(int argc, char const *argv[])
 {
 	MPI_Init(NULL,NULL);
@@ -86,6 +86,7 @@ int main(int argc, char const *argv[])
 
 	vector<long int> queriesProcessX;
 	vector<long int> queriesProcessY;
+	vector<long int> queryNums;
 	if(my_rank == 0) // rank 0 process will give queries to all other processes
 	{
 		// for generating random numbers
@@ -96,12 +97,15 @@ int main(int argc, char const *argv[])
 		std::uniform_int_distribution<unsigned int>  distr(range_from, range_to);
 		vector<vector<long int> > queriesAllProcessesX;
 		vector<vector<long int> > queriesAllProcessesY;
+		vector<vector<long int> > queryNumsAllProcesses;
 		for(int i = 1; i < num_processes; i++)
 		{
 			vector<long int> queriesOneProcessX;
 			vector<long int> queriesOneProcessY;
+			vector<long int> queryNumsOneProcess;
 			queriesAllProcessesX.push_back(queriesOneProcessX);
 			queriesAllProcessesY.push_back(queriesOneProcessY);
+			queryNumsAllProcesses.push_back(queryNumsOneProcess);
 		}
 		for(long int i = 0; i < numQueries; i++)
 		{
@@ -116,6 +120,7 @@ int main(int argc, char const *argv[])
 			// printf("proc:%d\n",process_of_y);
 			queriesAllProcessesX[process_of_y - 1].push_back((long int)x);
 			queriesAllProcessesY[process_of_y - 1].push_back((long int)y);
+			queryNumsAllProcesses[process_of_y - 1].push_back(i);
 		}
 		// testing
 		for(int i = 1; i < num_processes; i++)
@@ -123,7 +128,7 @@ int main(int argc, char const *argv[])
 			printf("queries sent to process %d\n",i);
 			for(long int j = 0; j < queriesAllProcessesX[i-1].size(); j++)
 			{
-				printf("(%ld,%ld)\n",queriesAllProcessesX[i-1][j],queriesAllProcessesY[i-1][j]);
+				printf("%ld:(%ld,%ld)\n",queryNumsAllProcesses[i-1][j],queriesAllProcessesX[i-1][j],queriesAllProcessesY[i-1][j]);
 			}
 		}
 
@@ -134,6 +139,7 @@ int main(int argc, char const *argv[])
 			MPI_Send(&numQueriesProcess,1,MPI_LONG,i,0,MPI_COMM_WORLD); // send number of queries for the process
 			MPI_Send(&queriesAllProcessesX[i-1][0],numQueriesProcess,MPI_LONG,i,1,MPI_COMM_WORLD); // send the queries vector to the respective process
 			MPI_Send(&queriesAllProcessesY[i-1][0],numQueriesProcess,MPI_LONG,i,2,MPI_COMM_WORLD); // send the queries vector to the respective process
+			MPI_Send(&queryNumsAllProcesses[i-1][0],numQueriesProcess,MPI_LONG,i,3,MPI_COMM_WORLD);
 		}
 	}
 	else
@@ -142,14 +148,16 @@ int main(int argc, char const *argv[])
 		MPI_Recv(&numQueriesProcess,1,MPI_LONG,0,0,MPI_COMM_WORLD,&status);
 		queriesProcessX.resize(numQueriesProcess);
 		queriesProcessY.resize(numQueriesProcess);
+		queryNums.resize(numQueriesProcess);
 		MPI_Recv(&queriesProcessX[0],numQueriesProcess,MPI_LONG,0,1,MPI_COMM_WORLD,&status);
 		MPI_Recv(&queriesProcessY[0],numQueriesProcess,MPI_LONG,0,2,MPI_COMM_WORLD,&status);
+		MPI_Recv(&queryNums[0],numQueriesProcess,MPI_LONG,0,3,MPI_COMM_WORLD,&status);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	// now all processes have the query array they have to process
 	if(my_rank != 0)
 	{
-		processQueries(my_rank,queriesProcessX,queriesProcessY,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes, numQueries); // num_process-1 coz process 0's work is complete
+		processQueriesPathCompression(my_rank,queriesProcessX,queriesProcessY,queryNums,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes, numQueries); // num_process-1 coz process 0's work is complete
 		printUnionFindDs(my_rank, unionfindDs, numPointsPerProcess);
 	}
 	MPI_Finalize();
