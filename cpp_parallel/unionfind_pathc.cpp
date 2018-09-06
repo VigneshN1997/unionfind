@@ -1,21 +1,20 @@
 #include "unionfind_pathc.h"
 // message type: 1-query forward, 2-reply, 3-processing of a process finished
-vector<long int> createNewMessagePathCompression(long int messageType, long int queryNum, long int newQueryX, long int newQueryY,long int finalParent)
+vector<long int>* createNewMessagePathCompression(long int messageType, long int queryNum, long int newQueryX, long int newQueryY,long int finalParent)
 {
-    vector<long int> message;
-    message.clear();
-    message.push_back(messageType);
-    message.push_back(queryNum);
-    message.push_back(newQueryX);               
-    message.push_back(newQueryY);
-    message.push_back(finalParent);
-    message.resize(5);
+    vector<long int>* message = new vector<long int>;
+    (*message).resize(5);
+    (*message)[0] = messageType;
+    (*message)[1] = queryNum;
+    (*message)[2] = newQueryX;
+    (*message)[3] = newQueryY;
+    (*message)[4] = finalParent;
     return message;
 }
 
 // CHECK THIS SELF MESSAGES CAN BE SENT ****
 
-void processQueriesPathCompression(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int> queryNums, long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries)
+void processQueriesPathCompression(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int> queryNums, long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries, long int* numMessages, long int* multiple)
 {
     long int* numQueriesCompleted = (long int*)malloc(sizeof(long int));
     *numQueriesCompleted = 0;
@@ -52,12 +51,13 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
             // printf("Union of %ld and %ld done by process %d\n",x,y,processRank);
             continue;
         }
-
+        *multiple = *multiple + 1;
         vector<long int>* queryWithWhichProcessStarted = new vector<long int>;
         (*queryWithWhichProcessStarted).push_back(y);
         (*replyRequired)[queryNums[i]] = queryWithWhichProcessStarted;
         (*replyRequiredSelf)[queryNums[i]] = true;
-        vector<long int> queryForward = createNewMessagePathCompression(1,queryNums[i],retVal->query->newQueryX,retVal->query->newQueryY,-1);
+        vector<long int>* queryForward = createNewMessagePathCompression(1,queryNums[i],retVal->query->newQueryX,retVal->query->newQueryY,-1);
+        *numMessages += 1;
         sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
         // printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",x,y,retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,(*processQueryNumMappingSend)[retVal->query->toProcess] - 1);
 
@@ -70,7 +70,7 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
             vector<long int> queryRecv;
             queryRecv.resize(5);
             MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-            processReceivedQueryPathCompression(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted);
+            processReceivedQueryPathCompression(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
         }
     }
     if((*replyRequiredSelf).size() > 0)
@@ -87,13 +87,13 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
                 vector<long int> queryRecv;
                 queryRecv.resize(5);
                 MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-                processReceivedQueryPathCompression(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted);
+                processReceivedQueryPathCompression(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
             }
         }
     }
     *numQueriesCompleted += myNumQueries;
     printf("process:%d has finished its queries.\n",processRank);
-    vector<long int> finishedMsg = createNewMessagePathCompression(3,myNumQueries,-1,-1,-1);
+    vector<long int>* finishedMsg = createNewMessagePathCompression(3,myNumQueries,-1,-1,-1);
     for(int j = 1; j < num_processes; j++)
     {
         if(j == processRank)
@@ -117,14 +117,14 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
             vector<long int> queryRecv;
             queryRecv.resize(5);
             MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-            processReceivedQueryPathCompression(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted);
+            processReceivedQueryPathCompression(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
         }
     }
     printf("process:%d exiting.\n",processRank);
 }
 
 
-void processReceivedQueryPathCompression(vector<long int> queryRecv, unordered_map<long int, vector<long int>* >* replyRequired,unordered_map<long int, bool>* replyRequiredSelf,unordered_map<long int, vector<int>* >* replyToBeSent,long int* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,unordered_map<int,int>* processQueryNumMappingSend,MPI_Status status, long int* numQueriesCompleted)
+void processReceivedQueryPathCompression(vector<long int> queryRecv, unordered_map<long int, vector<long int>* >* replyRequired,unordered_map<long int, bool>* replyRequiredSelf,unordered_map<long int, vector<int>* >* replyToBeSent,long int* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,unordered_map<int,int>* processQueryNumMappingSend,MPI_Status status, long int* numQueriesCompleted, long int * numMessages)
 {
     returnStruct* retVal;
     if(queryRecv[0] == 1) {
@@ -132,8 +132,19 @@ void processReceivedQueryPathCompression(vector<long int> queryRecv, unordered_m
         if(retVal->query->finalParent != -1)
         {
             // printf("Union of %ld and %ld done by process %d\n",queryRecv[2],queryRecv[3],processRank);
-            vector<long int> replyMsg = createNewMessagePathCompression(2,queryRecv[1],-1,-1,retVal->query->finalParent);
+            vector<long int>* replyMsg = createNewMessagePathCompression(2,queryRecv[1],-1,-1,retVal->query->finalParent);
+            *numMessages += 1;
             sendMessage(replyMsg,status.MPI_SOURCE,processQueryNumMappingSend);
+            unordered_map<long int,vector<int>* >::iterator map_itr2 = (*replyToBeSent).find(queryRecv[1]);
+            if(map_itr2 != (*replyToBeSent).end())
+            {
+                vector<int> tempVec = *(map_itr2->second);
+                for(int i = 0; i < tempVec.size(); i++) {
+                    *numMessages += 1;
+                    sendMessage(replyMsg,tempVec[i],processQueryNumMappingSend);
+                }
+                (*replyToBeSent).erase(map_itr2);           
+            }
         }
         else
         {
@@ -156,7 +167,8 @@ void processReceivedQueryPathCompression(vector<long int> queryRecv, unordered_m
                 (*vec).push_back(status.MPI_SOURCE);
                 (*replyToBeSent)[queryForWhichReplyRequired] = vec;  
             }
-            vector<long int> queryForward = createNewMessagePathCompression(1,queryForWhichReplyRequired,retVal->query->newQueryX,retVal->query->newQueryY,-1);
+            vector<long int>* queryForward = createNewMessagePathCompression(1,queryForWhichReplyRequired,retVal->query->newQueryX,retVal->query->newQueryY,-1);
+            *numMessages += 1;
             sendMessage(queryForward,retVal->query->toProcess,processQueryNumMappingSend);
             // printf("Sent query union(%ld,%ld)=>union(%ld,%ld) to process %d with tag %d\n",queryRecv[2],queryRecv[3],retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,(*processQueryNumMappingSend)[retVal->query->toProcess] - 1);
         }
@@ -169,7 +181,10 @@ void processReceivedQueryPathCompression(vector<long int> queryRecv, unordered_m
         {
             vector<int> tempVec = *(map_itr2->second);
             for(int i = 0; i < tempVec.size(); i++) {
-                sendMessage(queryRecv,tempVec[i],processQueryNumMappingSend);
+                vector<long int>* queryRecvCopy = new vector<long int>;
+                (*queryRecvCopy).assign(queryRecv.begin(), queryRecv.end());
+                *numMessages += 1;
+                sendMessage(queryRecvCopy,tempVec[i],processQueryNumMappingSend);
             }
             (*replyToBeSent).erase(map_itr2);           
         }
