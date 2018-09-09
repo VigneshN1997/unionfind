@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <random>
+#include <climits>
+#include <cstring>
 
 struct sendQuery
 {

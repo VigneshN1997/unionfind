@@ -1,4 +1,4 @@
-#include "unionfind_pathc.cpp"
+#include "unionfind_modified.cpp"
 int main(int argc, char const *argv[])
 {
 	MPI_Init(NULL,NULL);
@@ -122,7 +122,7 @@ int main(int argc, char const *argv[])
 		logFileName[11] = '\0';
 		FILE* fp = fopen(logFileName, "w");
 		start_time = MPI_Wtime();
-		processQueriesPathCompression(my_rank,queriesProcessX,queriesProcessY,queryNums,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes, numQueries, numMessages, multiple, fp); // num_process-1 coz process 0's work is complete
+		processQueriesDeferredUpdates(my_rank,queriesProcessX,queriesProcessY,queryNums,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes, numQueries, numMessages, multiple); // num_process-1 coz process 0's work is complete
 		max_end_time = MPI_Wtime() - start_time;
 		MPI_Send(&max_end_time, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
 		MPI_Send(numMessages, 1, MPI_LONG, 0, 2, MPI_COMM_WORLD);

@@ -14,7 +14,7 @@ vector<long int>* createNewMessagePathCompression(long int messageType, long int
 
 // CHECK THIS SELF MESSAGES CAN BE SENT ****
 
-void processQueriesPathCompression(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int> queryNums, long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries, long int* numMessages, long int* multiple)
+void processQueriesPathCompression(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int> queryNums, long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries, long int* numMessages, long int* multiple,FILE* fp)
 {
     long int* numQueriesCompleted = (long int*)malloc(sizeof(long int));
     *numQueriesCompleted = 0;
