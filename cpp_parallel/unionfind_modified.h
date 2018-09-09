@@ -1,5 +1,7 @@
 #include "unionfind_pathc.cpp"
 
+#define MAX_UPDATES 100	
+
 vector<pair<vector<long int>*, vector<long int>* >* >* initializeUpdatesStructure(int num_processes);
 void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int> queryNums, long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries);
 vector<long int> createNewMessageModified(long int messageType, long int queryNum, long int newQueryX, long int newQueryY, long int numUpdates, long int originalProcessNum);

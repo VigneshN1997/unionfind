@@ -25,14 +25,9 @@ void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProce
     unordered_map<long int, vector<long int>* >* replyRequired = new unordered_map<long int, vector<long int>* >; // mapping from queryNum to list of y's with which this process started
     unordered_map<long int, bool>* replyRequiredSelf = new unordered_map<long int, bool>;
     unordered_map<long int, vector<int>* >* replyToBeSent = new unordered_map<long int, vector<int>* >; // mapping from queryNum to list of processNums to which to send reply
-    
-    vector<long int>*  startIndexVec = new vector<long int>;
-    // (*startIndexVec).resize(num_processes - 1);
-    // for(int i = 1; i < num_processes; i++) {
-    //     (*startIndexVec)[i-1] = 0;
-    // }
+
     vector<pair<vector<long int>*, vector<long int>* >* >* updatesDone = initializeUpdatesStructure(num_processes);
-    // printf("\n",);
+
     MPI_Request request; // check this
     MPI_Status status;
     int flag;
@@ -40,10 +35,6 @@ void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProce
     long int i;
     long int x,y;
     long int startIndex = (processRank - 1) * numPointsPerProcess;
-    // for(int i = 0; i < myNumQueries; i++)
-    // {
-    //     printf("%ld:%d: (%d,%d)\n",queryNums[i],processRank,(int)queriesProcessX[i],(int)queriesProcessY[i]);
-    // }
 
     for(int j = 1; j < num_processes; j++)
     {
@@ -76,8 +67,10 @@ void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProce
             flag = 0;
             int src = status.MPI_SOURCE;
             int tag = status.MPI_TAG;
+            int* count = (int*)malloc(sizeof(int));
+            MPI_Get_count(&status, MPI_LONG, count);
             vector<long int> queryRecv;
-            queryRecv.resize(6);
+            queryRecv.resize(*count);
             MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
             processReceivedQueryModified(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,updatesDone,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted);
         }
@@ -93,8 +86,10 @@ void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProce
                 flag = 0;
                 int src = status.MPI_SOURCE;
                 int tag = status.MPI_TAG;
+                int* count = (int*)malloc(sizeof(int));
+                MPI_Get_count(&status, MPI_LONG, count);
                 vector<long int> queryRecv;
-                queryRecv.resize(6);
+                queryRecv.resize(*count);
                 MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
                 processReceivedQueryModified(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,updatesDone,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted);
             }
@@ -123,8 +118,10 @@ void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProce
             flag = 0;
             int src = status.MPI_SOURCE;
             int tag = status.MPI_TAG;
+            int* count = (int*)malloc(sizeof(int));
+            MPI_Get_count(&status, MPI_LONG, count);
             vector<long int> queryRecv;
-            queryRecv.resize(6);
+            queryRecv.resize(*count);
             MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
             processReceivedQueryModified(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,updatesDone,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted);
         }
@@ -133,17 +130,30 @@ void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProce
     while((*replyRequired).size() > 0) {
         for(int i = 1; i < num_processes; i++) {
             long int numUpdates = (*(*((*updatesDone)[i-1])).first).size();
-            if(i == processRank) {
-                processUpdates(*(*((*updatesDone)[i-1])).first, *(*((*updatesDone)[i-1])).second,numUpdates,replyToBeSent,replyRequired,updatesDone,unionfindDs,pointIdMapping,startIndex,processRank);
-                continue;
-            }
             if(numUpdates > 0) {
-                vector<long int> queryForward = createNewMessageModified(3,-1,-1,-1, numUpdates, -1);
-                sendMessage(queryForward,i,processQueryNumMappingSend);
-                sendMessage(*(*((*updatesDone)[i-1])).first, i,processQueryNumMappingSend);
-                sendMessage(*(*((*updatesDone)[i-1])).second, i,processQueryNumMappingSend);
-                (*(*((*updatesDone)[i-1])).first).clear();
-                (*(*((*updatesDone)[i-1])).second).clear();
+                if(i == processRank) {
+                    processUpdates(*(*((*updatesDone)[i-1])).first, *(*((*updatesDone)[i-1])).second,numUpdates,replyToBeSent,replyRequired,updatesDone,unionfindDs,pointIdMapping,startIndex,processRank);
+                    (*(*((*updatesDone)[i-1])).first).clear();
+                    (*(*((*updatesDone)[i-1])).second).clear();
+                    continue;
+                }
+                if(numUpdates > MAX_UPDATES) {
+                    numUpdates = MAX_UPDATES;
+                }
+                
+                if(numUpdates > 0) {
+                    vector<long int>* queryNumsVec =(*((*updatesDone)[i-1])).first;
+                    vector<long int>* finalParentsVec = (*((*updatesDone)[i-1])).second;
+                    vector<long int>* queryForward = createNewMessageModified(3,-1,-1,-1, numUpdates, -1);
+                    (*queryForward).insert((*queryForward).end(),(*queryNumsVec).begin(), (*queryNumsVec).begin() + numUpdates);
+                    (*queryForward).insert((*queryForward).end(),(*finalParentsVec).begin(), (*finalParentsVec).begin() + numUpdates);
+                    
+                    sendMessage(queryForward,i,processQueryNumMappingSend);
+
+                    (*queryNumsVec).erase((*queryNumsVec).begin(), (*queryNumsVec).begin() + numUpdates);
+                    (*finalParentsVec).erase((*finalParentsVec).begin(), (*finalParentsVec).begin() + numUpdates);
+                    
+                }
             }
         }
         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
@@ -152,8 +162,10 @@ void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProce
             flag = 0;
             int src = status.MPI_SOURCE;
             int tag = status.MPI_TAG;
+            int* count = (int*)malloc(sizeof(int));
+            MPI_Get_count(&status, MPI_LONG, count);
             vector<long int> queryRecv;
-            queryRecv.resize(6);
+            queryRecv.resize(*count);
             MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
             processReceivedQueryModified(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,updatesDone,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted);
         }
@@ -163,17 +175,16 @@ void processQueriesDeferredUpdates(int processRank,vector<long int> queriesProce
 }
 
 // 1->query forward 2->query forward with updates 3->only updates(no query) 4->reply for completing a query 5->processing of a process finished
-vector<long int> createNewMessageModified(long int messageType, long int queryNum, long int newQueryX, long int newQueryY, long int numUpdates, long int originalProcessNum)
+vector<long int> createNewMessageModified(long int messageType, long int queryNum, long int newQueryX, long int newQueryY, long int numUpdates, long int originalProcessRank)
 {
-    vector<long int> message;
-    message.clear();
-    message.push_back(messageType);
-    message.push_back(queryNum);
-    message.push_back(newQueryX);               
-    message.push_back(newQueryY);
-    message.push_back(numUpdates);
-    message.push_back(originalProcessNum);
-    message.resize(6);
+    vector<long int>* message = new vector<long int>;
+    (*message).resize(6);
+    (*message)[0] = messageType;
+    (*message)[1] = queryNum;
+    (*message)[2] = newQueryX;
+    (*message)[3] = newQueryY;
+    (*message)[4] = numUpdates;
+    (*message)[5] = originalProcessRank;
     return message;
 }
 
@@ -210,22 +221,24 @@ void processUpdates(vector<long int> queryNumsVec, vector<long int> finalParents
 void sendUpdatesWithQueryForwarding(returnStruct* retVal, vector<pair<vector<long int>*, vector<long int>* >* >* updatesDone, long int queryNum, long int originalProcessRank, unordered_map<int,int>* processQueryNumMappingSend) {
     int toProcess = retVal->query->toProcess;
     long int numUpdates = (*(*((*updatesDone)[toProcess-1])).first).size();
-    vector<long int>* tempQueries = new vector<long int>;
-    vector<long int>* tempParents = new vector<long int>;
+    if(numUpdates > MAX_UPDATES) {
+        numUpdates = MAX_UPDATES;
+    }
+    vector<long int>* queryNumsVec =(*((*updatesDone)[toProcess-1])).first;
+    vector<long int>* finalParentsVec = (*((*updatesDone)[toProcess-1])).second;
     if(numUpdates > 0) {
-        vector<long int> queryForward = createNewMessageModified(2,queryNum,retVal->query->newQueryX,retVal->query->newQueryY, numUpdates, originalProcessRank);
+        vector<long int>* queryForward = createNewMessageModified(2,queryNum,retVal->query->newQueryX,retVal->query->newQueryY, numUpdates, originalProcessRank);
+        (*queryForward).insert((*queryForward).end(),(*queryNumsVec).begin(), (*queryNumsVec).begin() + numUpdates);
+        (*queryForward).insert((*queryForward).end(),(*finalParentsVec).begin(), (*finalParentsVec).begin() + numUpdates);
+        
         sendMessage(queryForward,toProcess,processQueryNumMappingSend);
-        (*tempQueries).assign((*(*((*updatesDone)[toProcess - 1])).first).begin(), (*(*((*updatesDone)[toProcess - 1])).first).end());
-        (*tempParents).assign((*(*((*updatesDone)[toProcess - 1])).second).begin(), (*(*((*updatesDone)[toProcess - 1])).second).end());
-        printf("send up with q fwd:%d %d\n",(*processQueryNumMappingSend)[toProcess] - 1, toProcess);
-        sendMessage(*tempQueries, toProcess,processQueryNumMappingSend);
-        sendMessage(*tempParents, toProcess,processQueryNumMappingSend);
-        (*(*((*updatesDone)[toProcess-1])).first).clear();
-        (*(*((*updatesDone)[toProcess-1])).second).clear();
+
+        (*queryNumsVec).erase((*queryNumsVec).begin(), (*queryNumsVec).begin() + numUpdates);
+        (*finalParentsVec).erase((*finalParentsVec).begin(), (*finalParentsVec).begin() + numUpdates);
         
     }
     else {
-        vector<long int> queryForward = createNewMessageModified(1,queryNum,retVal->query->newQueryX,retVal->query->newQueryY, 0, originalProcessRank);
+        vector<long int>* queryForward = createNewMessageModified(1,queryNum,retVal->query->newQueryX,retVal->query->newQueryY, 0, originalProcessRank);
         sendMessage(queryForward,toProcess,processQueryNumMappingSend);
     }
     printf("Sent query %ld union=>union(%ld,%ld) to process %d with tag %d\n",queryNum,retVal->query->newQueryX,retVal->query->newQueryY,retVal->query->toProcess,(*processQueryNumMappingSend)[retVal->query->toProcess] - 1);
@@ -241,15 +254,13 @@ void processReceivedQueryModified(vector<long int> queryRecv, unordered_map<long
             long int numUpdates = queryRecv[4];
             vector<long int> queryNumsVec;
             vector<long int> finalParentsVec;
-            queryNumsVec.resize(numUpdates);
-            finalParentsVec.resize(numUpdates);
-            MPI_Recv(&queryNumsVec[0],queryNumsVec.size(),MPI_LONG,srcOfMsg,status.MPI_TAG+1,MPI_COMM_WORLD,&status);
-            MPI_Recv(&finalParentsVec[0],finalParentsVec.size(),MPI_LONG,srcOfMsg,status.MPI_TAG+2,MPI_COMM_WORLD,&status);
-            printf("::::r\n");
-            for(int i = 0; i < numUpdates; i++) {
-                printf("(%ld %ld)",queryNumsVec[i],finalParentsVec[i]);
-            }
-            printf("\n");
+            queryNumsVec.assign(queryRecv.begin() + 6, queryRecv.begin() + 6 + numUpdates);
+            finalParentsVec.assign(queryRecv.begin() + 6 + numUpdates, queryRecv.begin() + 6 + numUpdates + numUpdates);
+            // printf("::::r\n");
+            // for(int i = 0; i < numUpdates; i++) {
+            //     printf("(%ld %ld)",queryNumsVec[i],finalParentsVec[i]);
+            // }
+            // printf("\n");
             processUpdates(queryNumsVec, finalParentsVec, numUpdates, replyToBeSent, replyRequired, updatesDone, unionfindDs, pointIdMapping, startIndex, processRank);
         }
         retVal = unifyPathCompression(queryRecv[2],queryRecv[3],unionfindDs,pointIdMapping,startIndex,processRank);
@@ -304,16 +315,15 @@ void processReceivedQueryModified(vector<long int> queryRecv, unordered_map<long
         long int numUpdates = queryRecv[4];
         vector<long int> queryNumsVec;
         vector<long int> finalParentsVec;
-        queryNumsVec.resize(numUpdates);
-        finalParentsVec.resize(numUpdates);
-        printf("heyyyy %ld\n",numUpdates);
-        MPI_Recv(&queryNumsVec[0],queryNumsVec.size(),MPI_LONG,srcOfMsg,status.MPI_TAG+1,MPI_COMM_WORLD,&status);
-        MPI_Recv(&finalParentsVec[0],finalParentsVec.size(),MPI_LONG,srcOfMsg,status.MPI_TAG+2,MPI_COMM_WORLD,&status);
-        printf("::::P\n");
-        for(int i = 0; i < numUpdates; i++) {
-            printf("(%ld %ld)",queryNumsVec[i],finalParentsVec[i]);
-        }
-        printf("\n");
+        vector<long int> queryNumsVec;
+        vector<long int> finalParentsVec;
+        queryNumsVec.assign(queryRecv.begin() + 6, queryRecv.begin() + 6 + numUpdates);
+        finalParentsVec.assign(queryRecv.begin() + 6 + numUpdates, queryRecv.begin() + 6 + numUpdates + numUpdates);
+        // printf("::::P\n");
+        // for(int i = 0; i < numUpdates; i++) {
+        //     printf("(%ld %ld)",queryNumsVec[i],finalParentsVec[i]);
+        // }
+        // printf("\n");
         processUpdates(queryNumsVec, finalParentsVec, numUpdates, replyToBeSent, replyRequired, updatesDone, unionfindDs, pointIdMapping, startIndex, processRank);
 
     }
