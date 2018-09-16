@@ -1,5 +1,5 @@
 #include "unionfind_modified.cpp"
-int main(int argc, char const *argv[])
+int main(int argc, char* argv[])
 {
 	MPI_Init(NULL,NULL);
 	int num_processes;
@@ -7,9 +7,8 @@ int main(int argc, char const *argv[])
 	int my_rank;
 	MPI_Status status;
 	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
-	unordered_map<string, long int> config = getConfig("config.txt");
-	long int numPoints = config["numPoints"];
-	long int numQueries = config["numQueries"];
+	long int numPoints = atol(argv[1]);
+	long int numQueries = atol(argv[2]);
 	long int numPointsPerProcess = (long int)(numPoints/(num_processes - 1));
 	numPoints = numPointsPerProcess*(num_processes-1);
 
@@ -116,13 +115,13 @@ int main(int argc, char const *argv[])
 	*multiple = 0;
 	if(my_rank != 0)
 	{
-		char* logFileName = (char*)malloc(12);
-		strcpy(logFileName, "logprocess");
-		logFileName[10] = (char)my_rank;
-		logFileName[11] = '\0';
-		FILE* fp = fopen(logFileName, "w");
+		// char* logFileName = (char*)malloc(12);
+		// strcpy(logFileName, "logprocess");
+		// logFileName[10] = (char)my_rank;
+		// logFileName[11] = '\0';
+		// FILE* fp = fopen(logFileName, "w");
 		start_time = MPI_Wtime();
-		processQueriesDeferredUpdates(my_rank,queriesProcessX,queriesProcessY,queryNums,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes, numQueries, numMessages, multiple); // num_process-1 coz process 0's work is complete
+		processQueries(my_rank,queriesProcessX,queriesProcessY,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes, numQueries, numMessages, multiple); // num_process-1 coz process 0's work is complete
 		max_end_time = MPI_Wtime() - start_time;
 		MPI_Send(&max_end_time, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
 		MPI_Send(numMessages, 1, MPI_LONG, 0, 2, MPI_COMM_WORLD);
@@ -145,6 +144,7 @@ int main(int argc, char const *argv[])
 				max_end_time = end_times[i-1];
 			}
 		}
+		printf("------------------------simple----------------------------\n");
 		printf("Number of processes:%d\n", num_processes - 1);
 		printf("Number of points:%ld\n", numPoints);
 		printf("Number of queries:%ld\n", numQueries);

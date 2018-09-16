@@ -14,7 +14,7 @@ vector<long int>* createNewMessagePathCompression(long int messageType, long int
 
 // CHECK THIS SELF MESSAGES CAN BE SENT ****
 
-void processQueriesPathCompression(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int> queryNums, long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries, long int* numMessages, long int* multiple,FILE* fp)
+void processQueriesPathCompression(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,vector<long int> queryNums, long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries, long int* numMessages, long int* multiple)
 {
     long int* numQueriesCompleted = (long int*)malloc(sizeof(long int));
     *numQueriesCompleted = 0;
@@ -92,7 +92,7 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
         }
     }
     *numQueriesCompleted += myNumQueries;
-    printf("process:%d has finished its queries.\n",processRank);
+    // printf("process:%d has finished its queries.\n",processRank);
     vector<long int>* finishedMsg = createNewMessagePathCompression(3,myNumQueries,-1,-1,-1);
     for(int j = 1; j < num_processes; j++)
     {
@@ -120,7 +120,7 @@ void processQueriesPathCompression(int processRank,vector<long int> queriesProce
             processReceivedQueryPathCompression(queryRecv,replyRequired,replyRequiredSelf,replyToBeSent,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
         }
     }
-    printf("process:%d exiting.\n",processRank);
+    // printf("process:%d exiting.\n",processRank);
 }
 
 

@@ -12,7 +12,7 @@ void sendMessage(vector<long int>* queryForward, int toProcess,unordered_map<int
     }
 }
 
-void processReceivedQuery(FILE* fp,vector<long int> queryRecv, unordered_map<long int,bool>* replyRequired,long int* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,unordered_map<int,int>* processQueryNumMappingSend, MPI_Status status, long int* numQueriesCompleted, long int* numMessages)
+void processReceivedQuery(vector<long int> queryRecv, unordered_map<long int,bool>* replyRequired,long int* unionfindDs,vector<int> pointIdMapping,long int startIndex, int processRank,unordered_map<int,int>* processQueryNumMappingSend, MPI_Status status, long int* numQueriesCompleted, long int* numMessages)
 {
     if(queryRecv[0] == 1) {
         returnStruct* retVal = unify(queryRecv[3],queryRecv[4],unionfindDs,pointIdMapping,startIndex,processRank);
@@ -60,7 +60,7 @@ vector<long int>* createNewMessage(long int messageType, long int queryNum, long
     return message;
 }
 
-void processQueries(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries, long int* numMessages, long int* multiple, FILE* fp)
+void processQueries(int processRank,vector<long int> queriesProcessX,vector<long int> queriesProcessY,long int* unionfindDs,vector<int> pointIdMapping,long int numPointsPerProcess,int num_processes, long int totalNumQueries, long int* numMessages, long int* multiple)
 {
     long int* numQueriesCompleted = (long int*)malloc(sizeof(long int));
     *numQueriesCompleted = 0;
@@ -113,7 +113,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
             vector<long int> queryRecv;
             queryRecv.resize(5);
             MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-            processReceivedQuery(fp,queryRecv,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
+            processReceivedQuery(queryRecv,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
         }
     }
     if((*replyRequired).size() > 0)
@@ -130,7 +130,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
                 vector<long int> queryRecv;
                 queryRecv.resize(5);
                 MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-                processReceivedQuery(fp,queryRecv,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
+                processReceivedQuery(queryRecv,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
             }
         }
     }
@@ -160,7 +160,7 @@ void processQueries(int processRank,vector<long int> queriesProcessX,vector<long
             vector<long int> queryRecv;
             queryRecv.resize(5);
             MPI_Recv(&queryRecv[0],queryRecv.size(),MPI_LONG,src,tag,MPI_COMM_WORLD,&status);
-            processReceivedQuery(fp,queryRecv,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
+            processReceivedQuery(queryRecv,replyRequired,unionfindDs,pointIdMapping,startIndex,processRank,processQueryNumMappingSend,status, numQueriesCompleted, numMessages);
         }
     }
     // fprintf(fp,"process:%d exiting.\n",processRank);
