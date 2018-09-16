@@ -3,3 +3,8 @@ a.out
 test.cpp
 unionfindDs*
 old.cpp
+.vscode/.ropeproject/config.py
+.vscode/.ropeproject/objectdb
+.vscode/c_cpp_properties.json
+Parallel_results.xlsx
+.DS_Store
