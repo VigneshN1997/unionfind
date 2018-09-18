@@ -1,4 +1,4 @@
-#include "unionfind_modified.cpp"
+#include "unionfind_simple.cpp"
 int main(int argc, char const *argv[])
 {
 	MPI_Init(NULL,NULL);
@@ -9,9 +9,8 @@ int main(int argc, char const *argv[])
 	MPI_Status status;
 	MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
 	// printf("hello from process:%d\n",my_rank);
-	unordered_map<string, long int> config = getConfig("config.txt");
-	long int numPoints = config["numPoints"];
-	long int numQueries = config["numQueries"];
+	long int numPoints = atol(argv[1]);
+	long int numQueries = atol(argv[2]);
 	// printf("points:%ld\n",numPoints);
 	// printf("queries:%ld\n",numQueries);
 	long int numPointsPerProcess = (long int)(numPoints/(num_processes - 1));
@@ -123,14 +122,14 @@ int main(int argc, char const *argv[])
 			queryNumsAllProcesses[process_of_y - 1].push_back(i);
 		}
 		// testing
-		for(int i = 1; i < num_processes; i++)
-		{
-			printf("queries sent to process %d\n",i);
-			for(long int j = 0; j < queriesAllProcessesX[i-1].size(); j++)
-			{
-				printf("%ld:(%ld,%ld)\n",queryNumsAllProcesses[i-1][j],queriesAllProcessesX[i-1][j],queriesAllProcessesY[i-1][j]);
-			}
-		}
+		// for(int i = 1; i < num_processes; i++)
+		// {
+		// 	printf("queries sent to process %d\n",i);
+		// 	for(long int j = 0; j < queriesAllProcessesX[i-1].size(); j++)
+		// 	{
+		// 		printf("%ld:(%ld,%ld)\n",queryNumsAllProcesses[i-1][j],queriesAllProcessesX[i-1][j],queriesAllProcessesY[i-1][j]);
+		// 	}
+		// }
 
 		// sending respective query arrays to respective processes
 		for(int i = 1; i < num_processes; i++)
@@ -171,10 +170,10 @@ int main(int argc, char const *argv[])
 		logFileName[11] = '\0';
 		FILE* fp = fopen(logFileName, "w");
 		start_time = MPI_Wtime();
-		processQueriesDeferredUpdates(my_rank,queriesProcessX,queriesProcessY,queryNums,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes, numQueries, numMessages, multiple); // num_process-1 coz process 0's work is complete
+		processQueries(my_rank,queriesProcessX,queriesProcessY,unionfindDs,pointIdMappingMain,numPointsPerProcess,num_processes, numQueries, numMessages, multiple); // num_process-1 coz process 0's work is complete
 		printUnionFindDs(my_rank, unionfindDs, numPointsPerProcess);
 		max_end_time = MPI_Wtime() - start_time;
-		printf("time for process(%d):%lf\n",my_rank,max_end_time);
+		// printf("time for process(%d):%lf\n",my_rank,max_end_time);
 		MPI_Send(&max_end_time, 1, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
 		MPI_Send(numMessages, 1, MPI_LONG, 0, 2, MPI_COMM_WORLD);
 		MPI_Send(multiple, 1, MPI_LONG, 0, 3, MPI_COMM_WORLD);		
