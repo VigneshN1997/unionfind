@@ -1,4 +1,4 @@
-#include "unionfind_modified.cpp"
+#include "unionfind_simple.cpp"
 int main(int argc, char* argv[])
 {
 	MPI_Init(NULL,NULL);
